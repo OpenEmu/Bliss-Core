@@ -59,6 +59,8 @@
 					<string>d5530f74681ec6e0f282dab42e6b1c5f</string>
 					<key>Name</key>
 					<string>ivoice.bin</string>
+					<key>Optional</key>
+					<true/>
 					<key>Size</key>
 					<string>2048</string>
 				</dict>
