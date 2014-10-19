@@ -28,8 +28,8 @@
 		<dict>
 			<key>OEGameCoreRequiresFiles</key>
 			<true/>
-			<key>OEGameCoreSupportsCheatCode</key>
-			<false/>
+			<key>OEGameCoreSaveStatesNotSupported</key>
+			<true/>
 			<key>OERequiredFiles</key>
 			<array>
 				<dict>
