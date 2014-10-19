@@ -232,16 +232,16 @@ static BlissController _controller[2] = {0};
 {
 	NSString *execPath = [NSString pathWithComponents:@[
 							[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) lastObject],
-							@"OpenEmu", @"BIOS", @"exec.rom"]];
+							@"OpenEmu", @"BIOS", @"exec.bin"]];
 	NSString *gromPath = [NSString pathWithComponents:@[
 							[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) lastObject],
-							@"OpenEmu", @"BIOS", @"grom.rom"]];
+							@"OpenEmu", @"BIOS", @"grom.bin"]];
 	NSString *ivoicePath = [NSString pathWithComponents:@[
 							[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) lastObject],
-							@"OpenEmu", @"BIOS", @"ivoice.rom"]];
+							@"OpenEmu", @"BIOS", @"ivoice.bin"]];
 	NSString *ecsPath = [NSString pathWithComponents:@[
 							[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) lastObject],
-							@"OpenEmu", @"BIOS", @"ecs.rom"]];
+							@"OpenEmu", @"BIOS", @"ecs.bin"]];
 
 	UINT16 count = peripheral->GetROMCount();
 
