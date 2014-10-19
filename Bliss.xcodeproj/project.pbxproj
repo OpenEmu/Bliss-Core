@@ -191,7 +191,7 @@
 		275CEEA619D518FF00901DD8 /* ROM.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ROM.h; path = memory/ROM.h; sourceTree = "<group>"; };
 		275CEEA719D518FF00901DD8 /* ROMBanker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ROMBanker.cpp; path = memory/ROMBanker.cpp; sourceTree = "<group>"; };
 		275CEEA819D518FF00901DD8 /* ROMBanker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ROMBanker.h; path = memory/ROMBanker.h; sourceTree = "<group>"; };
-		275CEEB119D5190E00901DD8 /* knowncarts.cfg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = knowncarts.cfg; path = ../../core/rip/knowncarts.cfg; sourceTree = "<group>"; };
+		275CEEB119D5190E00901DD8 /* knowncarts.cfg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = knowncarts.cfg; path = Bliss/core/rip/knowncarts.cfg; sourceTree = "<group>"; };
 		275CEEBE19D5193F00901DD8 /* CRC32.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CRC32.cpp; sourceTree = "<group>"; };
 		275CEEBF19D5193F00901DD8 /* CRC32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CRC32.h; sourceTree = "<group>"; };
 		275CEEC019D5193F00901DD8 /* ioapi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ioapi.c; sourceTree = "<group>"; };
@@ -234,7 +234,7 @@
 		275CEEF519D5195B00901DD8 /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
 		8D5B49B6048680CD000E48DA /* Bliss.oecoreplugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Bliss.oecoreplugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		94BE9E79171695AE00AB08E6 /* OEIntellivisionSystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OEIntellivisionSystemResponderClient.h; path = ../../../OpenEmu/OpenEmu/Intellivision/OEIntellivisionSystemResponderClient.h; sourceTree = "<group>"; };
+		94BE9E79171695AE00AB08E6 /* OEIntellivisionSystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OEIntellivisionSystemResponderClient.h; path = ../OpenEmu/OpenEmu/Intellivision/OEIntellivisionSystemResponderClient.h; sourceTree = "<group>"; };
 		C66DFC180F51D82F0080AA28 /* BlissGameCore.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = BlissGameCore.mm; sourceTree = "<group>"; };
 		C66DFC190F51D82F0080AA28 /* BlissGameCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BlissGameCore.h; sourceTree = "<group>"; };
 		C6D120E71711302600E868A8 /* OpenEmuBase.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = OpenEmuBase.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -259,7 +259,7 @@
 			isa = PBXGroup;
 			children = (
 				08FB77AFFE84173DC02AAC07 /* Classes */,
-				32C88E010371C26100C91783 /* BlissEmu-Core */,
+				32C88E010371C26100C91783 /* Bliss-Core */,
 				089C167CFE841241C02AAC07 /* Resources */,
 				089C1671FE841209C02AAC07 /* Frameworks and Libraries */,
 				19C28FB8FE9D52D311CA2CBB /* Products */,
@@ -507,14 +507,14 @@
 			path = audio;
 			sourceTree = "<group>";
 		};
-		32C88E010371C26100C91783 /* BlissEmu-Core */ = {
+		32C88E010371C26100C91783 /* Bliss-Core */ = {
 			isa = PBXGroup;
 			children = (
 				275CEE4519D5184D00901DD8 /* core */,
 				275CEE4619D5186100901DD8 /* drivers */,
 			);
-			name = "BlissEmu-Core";
-			path = ../..;
+			name = "Bliss-Core";
+			path = Bliss;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -696,7 +696,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../..\"";
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Bliss\"";
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "\"$(USER_LIBRARY_DIR)/Application Support/OpenEmu/Cores\"";
 				OTHER_CFLAGS = (
@@ -717,7 +717,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../..\"";
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Bliss\"";
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "\"$(USER_LIBRARY_DIR)/Application Support/OpenEmu/Cores\"";
 				OTHER_CFLAGS = (
