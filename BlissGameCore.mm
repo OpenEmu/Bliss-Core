@@ -230,18 +230,10 @@ static BlissController _controller[2] = {0};
 
 - (BOOL)loadROMForPeripheral:(Peripheral*)peripheral
 {
-	NSString *execPath = [NSString pathWithComponents:@[
-							[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) lastObject],
-							@"OpenEmu", @"BIOS", @"exec.bin"]];
-	NSString *gromPath = [NSString pathWithComponents:@[
-							[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) lastObject],
-							@"OpenEmu", @"BIOS", @"grom.bin"]];
-	NSString *ivoicePath = [NSString pathWithComponents:@[
-							[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) lastObject],
-							@"OpenEmu", @"BIOS", @"ivoice.bin"]];
-	NSString *ecsPath = [NSString pathWithComponents:@[
-							[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) lastObject],
-							@"OpenEmu", @"BIOS", @"ecs.bin"]];
+	NSString *execPath   = [[self biosDirectoryPath] stringByAppendingPathComponent:@"exec.bin"];
+	NSString *gromPath   = [[self biosDirectoryPath] stringByAppendingPathComponent:@"grom.bin"];
+	NSString *ivoicePath = [[self biosDirectoryPath] stringByAppendingPathComponent:@"ivoice.bin"];
+    NSString *ecsPath    = [[self biosDirectoryPath] stringByAppendingPathComponent:@"ecs.bin"];
 
 	UINT16 count = peripheral->GetROMCount();
 
