@@ -17,7 +17,7 @@
 	<key>CFBundleSignature</key>
 	<string>OpEm</string>
 	<key>CFBundleVersion</key>
-	<string>2.0.5</string>
+	<string>2.1.0</string>
 	<key>NSPrincipalClass</key>
 	<string>OEGameCoreController</string>
 	<key>OEGameCoreClass</key>
@@ -27,8 +27,6 @@
 		<key>openemu.system.intellivision</key>
 		<dict>
 			<key>OEGameCoreRequiresFiles</key>
-			<true/>
-			<key>OEGameCoreSaveStatesNotSupported</key>
 			<true/>
 			<key>OERequiredFiles</key>
 			<array>
@@ -70,7 +68,7 @@
 	<key>OEGameCorePlayerCount</key>
 	<string>2</string>
 	<key>OEProjectURL</key>
-	<string>http://sourceforge.net/projects/blissemu/</string>
+	<string>https://github.com/jeremiah-sypult/BlissEmu</string>
 	<key>OESystemIdentifiers</key>
 	<array>
 		<string>openemu.system.intellivision</string>

@@ -233,7 +233,7 @@ static BlissController _controller[2] = {0};
 	NSString *execPath   = [[self biosDirectoryPath] stringByAppendingPathComponent:@"exec.bin"];
 	NSString *gromPath   = [[self biosDirectoryPath] stringByAppendingPathComponent:@"grom.bin"];
 	NSString *ivoicePath = [[self biosDirectoryPath] stringByAppendingPathComponent:@"ivoice.bin"];
-    NSString *ecsPath    = [[self biosDirectoryPath] stringByAppendingPathComponent:@"ecs.bin"];
+	NSString *ecsPath    = [[self biosDirectoryPath] stringByAppendingPathComponent:@"ecs.bin"];
 
 	UINT16 count = peripheral->GetROMCount();
 
@@ -505,12 +505,12 @@ static BlissController _controller[2] = {0};
 
 - (BOOL)saveStateToFileAtPath:(NSString *)fileName
 {
-	return NO;
+	return currentEmu->SaveState( [fileName fileSystemRepresentation] );
 }
 
 - (BOOL)loadStateFromFileAtPath:(NSString *)fileName
 {
-	return NO;
+	return currentEmu->LoadState( [fileName fileSystemRepresentation] );
 }
 
 
@@ -527,13 +527,12 @@ void BlissAudioMixer::init(UINT32 sampleRate)
 	int sampleInterval = (sampleRate / [_currentCore frameInterval]);
 
 	// initialize the sampleBuffer
-	AudioMixer::init(sampleRate);
+	AudioMixer::init( sampleRate );
 
-	_currentCore->_audioMixer = this;
 	_currentCore->_audioBuffer = [_currentCore ringBufferAtIndex:0];
 
 	if ( _currentCore->_audioBuffer ) {
-	    [_currentCore->_audioBuffer setLength:(sizeof(INT16) * sampleInterval * 8)];
+		[_currentCore->_audioBuffer setLength:(sizeof(INT16) * sampleInterval * 8)];
 	}
 }
 
@@ -559,7 +558,7 @@ void BlissAudioMixer::flushAudio()
 
 void BlissVideoBus::init(UINT32 width, UINT32 height)
 {
-	VideoBus::init(width,height);
+	VideoBus::init( width, height );
 
 	_currentCore->_videoBuffer = new unsigned char[256 * 256 * 4];
 }
@@ -577,7 +576,7 @@ void BlissVideoBus::render()
 	VideoBus::render();
 
 	[_currentCore->_bufferLock lock];
-	memcpy(_currentCore->_videoBuffer, pixelBuffer, pixelBufferSize);
+	memcpy( _currentCore->_videoBuffer, this->pixelBuffer, this->pixelBufferSize );
 	[_currentCore->_bufferLock unlock];
 }
 
@@ -594,11 +593,11 @@ float BlissInputProducer::getValue(INT32 enumeration)
 	float value = 0.0f;
 
 	if ( enumeration >= CONTROLLER_DISC_DOWN && enumeration <= CONTROLLER_DISC_UP_LEFT ) {
-		value = INTY_TEST(_controller[player].disc, enumeration) == enumeration ? 1.0f : 0.0f;
+		value = INTY_TEST( _controller[player].disc, enumeration ) == enumeration ? 1.0f : 0.0f;
 	} else if ( enumeration == CONTROLLER_ACTION_TOP || enumeration == CONTROLLER_ACTION_BOTTOM_LEFT || enumeration == CONTROLLER_ACTION_BOTTOM_RIGHT ) {
-		value = INTY_TEST(_controller[player].action, enumeration) == enumeration ? 1.0f : 0.0f;
+		value = INTY_TEST( _controller[player].action, enumeration ) == enumeration ? 1.0f : 0.0f;
 	} else if ( enumeration >= CONTROLLER_KEYPAD_THREE && enumeration <= CONTROLLER_KEYPAD_CLEAR ) {
-		value = INTY_TEST(_controller[player].keypad, enumeration) == enumeration ? 1.0f : 0.0f;
+		value = INTY_TEST( _controller[player].keypad, enumeration ) == enumeration ? 1.0f : 0.0f;
 	}
 
 	return value;
@@ -649,15 +648,15 @@ float BlissInputProducer::getValue(INT32 enumeration)
 		case CONTROLLER_DISC_UP:
 		case CONTROLLER_DISC_LEFT: {
 			_controller[player-1].disc = down ?
-			INTY_ON(_controller[player-1].disc, btn) :
-			INTY_OFF(_controller[player-1].disc, btn);
+				INTY_ON( _controller[player-1].disc, btn ) :
+				INTY_OFF( _controller[player-1].disc, btn );
 			// if both horizontal + vertical disc directions are active,
 			// turn on the wide bit flag for 45-degree angles
-			if ((_controller[player-1].disc & (CONTROLLER_DISC_LEFT|CONTROLLER_DISC_RIGHT)) &&
-				(_controller[player-1].disc & (CONTROLLER_DISC_UP|CONTROLLER_DISC_DOWN))) {
-				INTY_ON(_controller[player-1].disc, CONTROLLER_DISC_WIDE);
+			if ( (_controller[player-1].disc & (CONTROLLER_DISC_LEFT|CONTROLLER_DISC_RIGHT) ) &&
+				( _controller[player-1].disc & (CONTROLLER_DISC_UP|CONTROLLER_DISC_DOWN) ) ) {
+				INTY_ON( _controller[player-1].disc, CONTROLLER_DISC_WIDE );
 			} else {
-				INTY_OFF(_controller[player-1].disc, CONTROLLER_DISC_WIDE);
+				INTY_OFF( _controller[player-1].disc, CONTROLLER_DISC_WIDE );
 			}
 			break;
 		}
@@ -674,15 +673,15 @@ float BlissInputProducer::getValue(INT32 enumeration)
 		case CONTROLLER_KEYPAD_ZERO:
 		case CONTROLLER_KEYPAD_ENTER:
 			_controller[player-1].keypad = down ?
-			INTY_ON(_controller[player-1].keypad, btn) :
-			INTY_OFF(_controller[player-1].keypad, btn);
+				INTY_ON(_controller[player-1].keypad, btn) :
+				INTY_OFF(_controller[player-1].keypad, btn);
 			break;
 		case CONTROLLER_ACTION_TOP:
 		case CONTROLLER_ACTION_BOTTOM_LEFT:
 		case CONTROLLER_ACTION_BOTTOM_RIGHT:
 			_controller[player-1].action = down ?
-			INTY_ON(_controller[player-1].action, btn) :
-			INTY_OFF(_controller[player-1].action, btn);
+				INTY_ON(_controller[player-1].action, btn) :
+				INTY_OFF(_controller[player-1].action, btn);
 			break;
 		default: break;
 	}
