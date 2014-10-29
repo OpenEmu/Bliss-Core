@@ -230,56 +230,28 @@ static BlissController _controller[2] = {0};
 
 - (BOOL)loadROMForPeripheral:(Peripheral*)peripheral
 {
-	NSString *execPath   = [[self biosDirectoryPath] stringByAppendingPathComponent:@"exec.bin"];
-	NSString *gromPath   = [[self biosDirectoryPath] stringByAppendingPathComponent:@"grom.bin"];
-	NSString *ivoicePath = [[self biosDirectoryPath] stringByAppendingPathComponent:@"ivoice.bin"];
-	NSString *ecsPath    = [[self biosDirectoryPath] stringByAppendingPathComponent:@"ecs.bin"];
-
+	BOOL didLoadROMs = NO;
+	NSString *BIOSPath = nil;
 	UINT16 count = peripheral->GetROMCount();
 
 	for (UINT16 i = 0; i < count; i++) {
 		ROM* r = peripheral->GetROM(i);
-		const char *filename = r->getDefaultFileName();
-		NSData *data = nil;
-
 		if (r->isLoaded()) {
+			didLoadROMs = YES;
 			continue;
 		}
 
-		if (filename[0] == 'e' &&
-			filename[1] == 'x' &&
-			filename[2] == 'e' &&
-			filename[3] == 'c') {
-			data = [NSData dataWithContentsOfFile:execPath];
-		}
-		else if (filename[0] == 'g' &&
-				 filename[1] == 'r' &&
-				 filename[2] == 'o' &&
-				 filename[3] == 'm') {
-			data = [NSData dataWithContentsOfFile:gromPath];
-		}
-		else if (filename[0] == 'i' &&
-				 filename[1] == 'v' &&
-				 filename[2] == 'o' &&
-				 filename[3] == 'i' &&
-				 filename[4] == 'c' &&
-				 filename[5] == 'e') {
-			data = [NSData dataWithContentsOfFile:ivoicePath];
-		}
-		else if (filename[0] == 'e' &&
-				 filename[1] == 'c' &&
-				 filename[2] == 's') {
-			data = [NSData dataWithContentsOfFile:ecsPath];
-		}
+		BIOSPath = [[self biosDirectoryPath] stringByAppendingString:[NSString stringWithFormat:@"/%s", r->getDefaultFileName()]];
 
-		if (data != nil) {
-			if (!r->load((void*)data.bytes)) {
-				return NO;
-			}
+		if ( r->load( [BIOSPath fileSystemRepresentation], r->getDefaultFileOffset() ) ) {
+			didLoadROMs = YES;
+		} else {
+			didLoadROMs = NO;
+			break;
 		}
 	}
 
-	return YES;
+	return didLoadROMs;
 }
 
 - (void)ReleasePeripheralInputs:(Peripheral*)periph

@@ -62,6 +62,18 @@
 					<key>Size</key>
 					<string>2048</string>
 				</dict>
+				<dict>
+					<key>Description</key>
+					<string>Entertainment Computer System ROM</string>
+					<key>MD5</key>
+					<string>2e72a9a2b897d330a35c8b07a6146c52</string>
+					<key>Name</key>
+					<string>ecs.bin</string>
+					<key>Optional</key>
+					<true/>
+					<key>Size</key>
+					<string>24576</string>
+				</dict>
 			</array>
 		</dict>
 	</dict>
