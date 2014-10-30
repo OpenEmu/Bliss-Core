@@ -7,19 +7,6 @@
 	objects = {
 
 /* Begin PBXAggregateTarget section */
-		82CAFB610FEDA62500CCDC7E /* Distribution */ = {
-			isa = PBXAggregateTarget;
-			buildConfigurationList = 82CAFB710FEDA62C00CCDC7E /* Build configuration list for PBXAggregateTarget "Distribution" */;
-			buildPhases = (
-				82CAFB820FEDA6AC00CCDC7E /* CopyFiles */,
-				82CAFB600FEDA62500CCDC7E /* ShellScript */,
-			);
-			dependencies = (
-				82CAFB650FEDA62A00CCDC7E /* PBXTargetDependency */,
-			);
-			name = Distribution;
-			productName = Distribution;
-		};
 		82D8155D0F1D878700EF8CF5 /* Build & Install Bliss */ = {
 			isa = PBXAggregateTarget;
 			buildConfigurationList = 82D815710F1D87B000EF8CF5 /* Build configuration list for PBXAggregateTarget "Build & Install Bliss" */;
@@ -92,13 +79,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		82CAFB640FEDA62A00CCDC7E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 089C1669FE841209C02AAC07 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 8D5B49AC048680CD000E48DA;
-			remoteInfo = CrabEmu;
-		};
 		82D815600F1D879200EF8CF5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 089C1669FE841209C02AAC07 /* Project object */;
@@ -107,18 +87,6 @@
 			remoteInfo = CrabEmu;
 		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		82CAFB820FEDA6AC00CCDC7E /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 16;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		089C1672FE841209C02AAC07 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
@@ -560,7 +528,6 @@
 			targets = (
 				8D5B49AC048680CD000E48DA /* Bliss */,
 				82D8155D0F1D878700EF8CF5 /* Build & Install Bliss */,
-				82CAFB610FEDA62500CCDC7E /* Distribution */,
 			);
 		};
 /* End PBXProject section */
@@ -579,20 +546,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		82CAFB600FEDA62500CCDC7E /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = /usr/bin/openemu_rb_automation.rb;
-			showEnvVarsInLog = 0;
-		};
 		82D8155C0F1D878700EF8CF5 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -667,11 +620,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		82CAFB650FEDA62A00CCDC7E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 8D5B49AC048680CD000E48DA /* Bliss */;
-			targetProxy = 82CAFB640FEDA62A00CCDC7E /* PBXContainerItemProxy */;
-		};
 		82D815610F1D879200EF8CF5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 8D5B49AC048680CD000E48DA /* Bliss */;
@@ -699,13 +647,6 @@
 				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Bliss\"";
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "\"$(USER_LIBRARY_DIR)/Application Support/OpenEmu/Cores\"";
-				OTHER_CFLAGS = (
-					"-DCRABZ80_NO_READMAP_FALLBACK",
-					"-DIN_CRABEMU",
-					"-DNO_ZLIB",
-					"-DNO_BZ2",
-					"-DCRABEMU_32BIT_COLOR",
-				);
 				PRODUCT_NAME = Bliss;
 				SKIP_INSTALL = YES;
 				WRAPPER_EXTENSION = oecoreplugin;
@@ -720,13 +661,6 @@
 				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Bliss\"";
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "\"$(USER_LIBRARY_DIR)/Application Support/OpenEmu/Cores\"";
-				OTHER_CFLAGS = (
-					"-DCRABZ80_NO_READMAP_FALLBACK",
-					"-DIN_CRABEMU",
-					"-DNO_ZLIB",
-					"-DNO_BZ2",
-					"-DCRABEMU_32BIT_COLOR",
-				);
 				PRODUCT_NAME = Bliss;
 				SKIP_INSTALL = YES;
 				WRAPPER_EXTENSION = oecoreplugin;
@@ -744,7 +678,6 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEPLOYMENT_LOCATION = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_INCREASE_PRECOMPILED_HEADER_SHARING = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -776,7 +709,6 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEPLOYMENT_LOCATION = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_INCREASE_PRECOMPILED_HEADER_SHARING = YES;
 				GCC_OPTIMIZATION_LEVEL = 3;
@@ -792,26 +724,6 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				OTHER_CFLAGS = "";
 				SDKROOT = macosx;
-			};
-			name = Release;
-		};
-		82CAFB620FEDA62500CCDC7E /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				INSTALL_PATH = "\"$(USER_LIBRARY_DIR)/Application Support/OpenEmu/Cores\"";
-				PRODUCT_NAME = Distribution;
-				SKIP_INSTALL = YES;
-			};
-			name = Debug;
-		};
-		82CAFB630FEDA62500CCDC7E /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				INSTALL_PATH = "\"$(USER_LIBRARY_DIR)/Application Support/OpenEmu/Cores\"";
-				PRODUCT_NAME = Distribution;
-				SKIP_INSTALL = YES;
 			};
 			name = Release;
 		};
@@ -852,15 +764,6 @@
 			buildConfigurations = (
 				1DEB913F08733D840010E9CD /* Debug */,
 				1DEB914008733D840010E9CD /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		82CAFB710FEDA62C00CCDC7E /* Build configuration list for PBXAggregateTarget "Distribution" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				82CAFB620FEDA62500CCDC7E /* Debug */,
-				82CAFB630FEDA62500CCDC7E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
