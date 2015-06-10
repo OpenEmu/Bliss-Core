@@ -57,3 +57,17 @@ BOOL Atari5200::LoadState(const CHAR* filename)
     printf("Atari5200::LoadState is not implemented\n");
     return FALSE;
 }
+
+UINT32 Atari5200::StateSize() {
+    return 0;
+}
+
+BOOL Atari5200::SerializeState(void* buffer, UINT32 length)
+{
+    return FALSE;
+}
+
+BOOL Atari5200::DeserializeState(const void* buffer, UINT32 length)
+{
+    return FALSE;
+}

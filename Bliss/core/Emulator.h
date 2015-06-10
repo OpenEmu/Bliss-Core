@@ -76,6 +76,10 @@ class Emulator : public Peripheral
         virtual BOOL SaveState(const CHAR* filename) = 0;
         virtual BOOL LoadState(const CHAR* filename) = 0;
 
+        virtual UINT32 StateSize() = 0;
+        virtual BOOL SerializeState(void* buffer, UINT32 length) = 0;
+        virtual BOOL DeserializeState(const void* buffer, UINT32 length) = 0;
+
 		static UINT32 GetEmulatorCount();
         static Emulator* GetEmulator(UINT32 i);
 		static Emulator* GetEmulatorByID(UINT32 targetSystemID);

@@ -21,6 +21,10 @@ class Atari5200 : public Emulator
         BOOL SaveState(const CHAR* filename);
         BOOL LoadState(const CHAR* filename);
 
+        UINT32 StateSize();
+        BOOL SerializeState(void* buffer, UINT32 length);
+        BOOL DeserializeState(const void* buffer, UINT32 length);
+
     private:
         JoyPad      leftInput;
         JoyPad      rightInput;

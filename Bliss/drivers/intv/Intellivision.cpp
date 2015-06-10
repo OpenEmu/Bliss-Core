@@ -334,3 +334,99 @@ close:
 end:
 	return didLoadState;
 }
+
+UINT32 Intellivision::StateSize()
+{
+    return sizeof(IntellivisionState);
+}
+
+BOOL Intellivision::SerializeState(void* buffer, UINT32 length)
+{
+    if(!buffer || length < sizeof(IntellivisionState))
+    {
+        return FALSE;
+    }
+    
+    IntellivisionState* state = (IntellivisionState*)buffer;
+    
+    size_t hsize = sizeof(StateHeader);
+    size_t csize = sizeof(StateChunk);
+    size_t cpusize = sizeof(CP1610State);
+    size_t sticsize = sizeof(AY38900State);
+    size_t psgsize = sizeof(AY38914State);
+    size_t ivoicesize = sizeof(IntellivoiceState);
+    size_t ecssize = sizeof(ECSState);
+    size_t ramsize = sizeof(RAMState);
+    size_t ram8imgsize = sizeof(state->RAM8bitImage);
+    size_t ram16imgsize = sizeof(state->RAM16bitImage);
+    size_t gramimgsize = sizeof(state->GRAMImage);
+    
+    state->header.emu = FOURCHAR('EMUS');
+    state->header.state = FOURCHAR('TATE');
+    state->header.emuID = ID_EMULATOR_BLISS;
+    state->header.version = FOURCHAR(EMU_STATE_VERSION);
+    state->header.sys = FOURCHAR('SYS\0');
+    state->header.sysID = ID_SYSTEM_INTELLIVISION;
+    state->header.cart = FOURCHAR('CART');
+    state->header.cartID = currentRip->GetCRC();
+    
+    state->cpu.id = FOURCHAR('CPU\0');
+    state->cpu.size = sizeof(CP1610State);
+    state->cpuState = cpu.getState();
+    
+    state->stic.id = FOURCHAR('STIC');
+    state->stic.size = sizeof(AY38900State);
+    state->sticState = stic.getState();
+    
+    state->psg.id = FOURCHAR('PSG\0');
+    state->psg.size = sizeof(AY38914State);
+    state->psgState = psg.getState();
+    
+    state->RAM8bit.id = FOURCHAR('RAM0');
+    state->RAM8bit.size = sizeof(RAMState) + sizeof(state->RAM8bitImage);
+    state->RAM8bitState = RAM8bit.getState(state->RAM8bitImage);
+    
+    state->RAM16bit.id = FOURCHAR('RAM1');
+    state->RAM16bit.size = sizeof(RAMState) + sizeof(state->RAM16bitImage);
+    state->RAM16bitState = RAM16bit.getState(state->RAM16bitImage);
+    
+    state->GRAM.id = FOURCHAR('GRAM');
+    state->GRAM.size = sizeof(RAMState) + sizeof(state->GRAMImage);
+    state->GRAMState = gram.getState(state->GRAMImage);
+    
+    // TODO: only if ivoice is used for this cart?
+    state->ivoice.id = FOURCHAR('VOIC');
+    state->ivoice.size = sizeof(IntellivoiceState);
+    state->ivoiceState = intellivoice.getState();
+    
+    // TODO: only if ecs is used for this cart?
+    state->ecs.id = FOURCHAR('ECS\0');
+    state->ecs.size = sizeof(ECSState);
+    state->ecsState = ecs.getState();
+    
+    state->eof.id = FOURCHAR('EOF\0');
+    state->eof.size = sizeof(IntellivisionState);
+    
+    return TRUE;
+}
+
+BOOL Intellivision::DeserializeState(const void* buffer, UINT32 length)
+{
+    if(!buffer || length < sizeof(IntellivisionState))
+    {
+        return FALSE;
+    }
+    
+    IntellivisionState* state = (IntellivisionState*)buffer;
+    
+    cpu.setState(state->cpuState);
+    stic.setState(state->sticState);
+    psg.setState(state->psgState);
+    RAM8bit.setState(state->RAM8bitState, state->RAM8bitImage);
+    RAM16bit.setState(state->RAM16bitState, state->RAM16bitImage);
+    gram.setState(state->GRAMState, state->GRAMImage);
+    intellivoice.setState(state->ivoiceState);
+    ecs.setState(state->ecsState);
+    
+    return TRUE;
+}
