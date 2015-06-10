@@ -491,7 +491,7 @@ static BlissController _controller[2] = {0};
     void *data = malloc(length);
     if(currentEmu->SerializeState(data, length))
     {
-        return [NSData dataWithBytes:(const void *)data length:length];
+        return [NSData dataWithBytesNoCopy:data length:length];
     }
     else
     {
