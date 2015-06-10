@@ -485,6 +485,50 @@ static BlissController _controller[2] = {0};
 	return currentEmu->LoadState( [fileName fileSystemRepresentation] );
 }
 
+- (NSData *)serializeStateWithError:(NSError **)outError
+{
+    NSUInteger length = currentEmu->StateSize();
+    void *data = malloc(length);
+    if(currentEmu->SerializeState(data, length))
+    {
+        return [NSData dataWithBytes:(const void *)data length:length];
+    }
+    else
+    {
+        if(outError)
+        {
+            *outError = [NSError errorWithDomain:OEGameCoreErrorDomain
+                                            code:OEGameCoreCouldNotSaveStateError
+                                        userInfo:@{
+                                                   NSLocalizedDescriptionKey : @"Save state data could not be written",
+                                                   NSLocalizedRecoverySuggestionErrorKey : @"The emulator could not write the state data."
+                                                   }];
+        }
+        
+        return nil;
+    }
+}
+
+- (BOOL)deserializeState:(NSData *)state withError:(NSError **)outError
+{
+    if(currentEmu->DeserializeState([state bytes], [state length]))
+    {
+        return YES;
+    }
+    else
+    {
+        if(outError)
+        {
+            *outError = [NSError errorWithDomain:OEGameCoreErrorDomain
+                                            code:OEGameCoreCouldNotLoadStateError
+                                        userInfo:@{
+                                                   NSLocalizedDescriptionKey : @"The save state data could not be read"
+                                                   }];
+        }
+        return NO;
+    }
+}
+
 
 #pragma mark -
 
