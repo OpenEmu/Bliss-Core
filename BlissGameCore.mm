@@ -430,7 +430,7 @@ static BlissController _controller[2] = {0};
 
 - (OEIntSize)aspectSize
 {
-    return OEIntSizeMake(4, 3);
+    return OEIntSizeMake(INTV_IMAGE_WIDTH * (12.0/7.0), INTV_IMAGE_HEIGHT);
 }
 
 - (const void *)videoBuffer
