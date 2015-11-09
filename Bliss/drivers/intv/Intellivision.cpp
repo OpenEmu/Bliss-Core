@@ -1,31 +1,6 @@
 
 #include "Intellivision.h"
 
-TYPEDEF_STRUCT_PACK( _IntellivisionState
-{
-    StateHeader          header;
-    StateChunk           cpu;
-    CP1610State          cpuState;
-    StateChunk           stic;
-    AY38900State         sticState;
-    StateChunk           psg;
-    AY38914State         psgState;
-    StateChunk           RAM8bit;
-    RAMState             RAM8bitState;
-    UINT16               RAM8bitImage[RAM8BIT_SIZE];
-    StateChunk           RAM16bit;
-    RAMState             RAM16bitState;
-    UINT16               RAM16bitImage[RAM16BIT_SIZE];
-    StateChunk           GRAM;
-    RAMState             GRAMState;
-    UINT16               GRAMImage[GRAM_SIZE];
-    StateChunk           ivoice;
-    IntellivoiceState    ivoiceState;
-    StateChunk           ecs;
-    ECSState             ecsState;
-    StateChunk           eof;
-} IntellivisionState; )
-
 /**
  * Initializes all of the basic hardware included in the Intellivision
  * Master Component as well as the ECS and Intellivoice peripherals.
@@ -33,8 +8,8 @@ TYPEDEF_STRUCT_PACK( _IntellivisionState
  */
 Intellivision::Intellivision()
     : Emulator("Intellivision"),
-      player1Controller(0, "Hand Controller #1"),
-      player2Controller(1, "Hand Controller #2"),
+      player1Controller(0, "Hand Controller 1"),
+      player2Controller(1, "Hand Controller 2"),
       psg(0x01F0, &player1Controller, &player2Controller),
       RAM8bit(RAM8BIT_SIZE, 0x0100, 8),
       RAM16bit(RAM16BIT_SIZE, 0x0200, 16),
@@ -96,337 +71,325 @@ Intellivision::Intellivision()
 
     AddPeripheral(&ecs);
     AddPeripheral(&intellivoice);
+
+    //zero the emulator state
+    memset(&state, 0, sizeof(IntellivisionState));
 }
 
-BOOL Intellivision::SaveState(const CHAR* filename)
+void Intellivision::SaveState()
 {
-	BOOL didSave = FALSE;
-	IntellivisionState state = {9};
-	size_t totalStateSize = sizeof(IntellivisionState);
+    state.header.emu = FOURCHAR('EMUS');
+    state.header.state = FOURCHAR('TATE');
+    state.header.emuID = ID_EMULATOR_BLISS;
+    state.header.version = FOURCHAR(EMU_STATE_VERSION);
+    state.header.sys = FOURCHAR('SYS\0');
+    state.header.sysID = ID_SYSTEM_INTELLIVISION;
+    state.header.cart = FOURCHAR('CART');
+    state.header.cartID = currentRip->GetCRC();
 
-	size_t hsize = sizeof(StateHeader);
-	size_t csize = sizeof(StateChunk);
-	size_t cpusize = sizeof(CP1610State);
-	size_t sticsize = sizeof(AY38900State);
-	size_t psgsize = sizeof(AY38914State);
-	size_t ivoicesize = sizeof(IntellivoiceState);
-	size_t ecssize = sizeof(ECSState);
-	size_t ramsize = sizeof(RAMState);
-	size_t ram8imgsize = sizeof(state.RAM8bitImage);
-	size_t ram16imgsize = sizeof(state.RAM16bitImage);
-	size_t gramimgsize = sizeof(state.GRAMImage);
+    state.cpu.id = FOURCHAR('CPU\0');
+    state.cpu.size = sizeof(CP1610State);
+    state.cpuState = cpu.getState();
 
-	state.header.emu = FOURCHAR('EMUS');
-	state.header.state = FOURCHAR('TATE');
-	state.header.emuID = ID_EMULATOR_BLISS;
-	state.header.version = FOURCHAR(EMU_STATE_VERSION);
-	state.header.sys = FOURCHAR('SYS\0');
-	state.header.sysID = ID_SYSTEM_INTELLIVISION;
-	state.header.cart = FOURCHAR('CART');
-	state.header.cartID = currentRip->GetCRC();
+    state.stic.id = FOURCHAR('STIC');
+    state.stic.size = sizeof(AY38900State);
+    state.sticState = stic.getState();
 
-	state.cpu.id = FOURCHAR('CPU\0');
-	state.cpu.size = sizeof(CP1610State);
-	state.cpuState = cpu.getState();
+    state.psg.id = FOURCHAR('PSG\0');
+    state.psg.size = sizeof(AY38914State);
+    state.psgState = psg.getState();
 
-	state.stic.id = FOURCHAR('STIC');
-	state.stic.size = sizeof(AY38900State);
-	state.sticState = stic.getState();
+    state.RAM8bit.id = FOURCHAR('RAM0');
+    state.RAM8bit.size = sizeof(RAMState) + sizeof(state.RAM8bitImage);
+    state.RAM8bitState = RAM8bit.getState(state.RAM8bitImage);
 
-	state.psg.id = FOURCHAR('PSG\0');
-	state.psg.size = sizeof(AY38914State);
-	state.psgState = psg.getState();
+    state.RAM16bit.id = FOURCHAR('RAM1');
+    state.RAM16bit.size = sizeof(RAMState) + sizeof(state.RAM16bitImage);
+    state.RAM16bitState = RAM16bit.getState(state.RAM16bitImage);
 
-	state.RAM8bit.id = FOURCHAR('RAM0');
-	state.RAM8bit.size = sizeof(RAMState) + sizeof(state.RAM8bitImage);
-	state.RAM8bitState = RAM8bit.getState(state.RAM8bitImage);
+    state.GRAM.id = FOURCHAR('GRAM');
+    state.GRAM.size = sizeof(RAMState) + sizeof(state.GRAMImage);
+    state.GRAMState = gram.getState(state.GRAMImage);
 
-	state.RAM16bit.id = FOURCHAR('RAM1');
-	state.RAM16bit.size = sizeof(RAMState) + sizeof(state.RAM16bitImage);
-	state.RAM16bitState = RAM16bit.getState(state.RAM16bitImage);
+    // TODO: only if ivoice is used for this cart?
+    state.ivoice.id = FOURCHAR('VOIC');
+    state.ivoice.size = sizeof(IntellivoiceState);
+    state.ivoiceState = intellivoice.getState();
 
-	state.GRAM.id = FOURCHAR('GRAM');
-	state.GRAM.size = sizeof(RAMState) + sizeof(state.GRAMImage);
-	state.GRAMState = gram.getState(state.GRAMImage);
+    // TODO: only if ecs is used for this cart?
+    state.ecs.id = FOURCHAR('ECS\0');
+    state.ecs.size = sizeof(ECSState);
+    state.ecsState = ecs.getState();
 
-	// TODO: only if ivoice is used for this cart?
-	state.ivoice.id = FOURCHAR('VOIC');
-	state.ivoice.size = sizeof(IntellivoiceState);
-	state.ivoiceState = intellivoice.getState();
-
-	// TODO: only if ecs is used for this cart?
-	state.ecs.id = FOURCHAR('ECS\0');
-	state.ecs.size = sizeof(ECSState);
-	state.ecsState = ecs.getState();
-
-	state.eof.id = FOURCHAR('EOF\0');
-	state.eof.size = sizeof(IntellivisionState);
-
-	FILE* file = fopen(filename, "wb");
-
-	if (file == NULL) {
-		printf("Error: Unable to create file %s\n", filename);
-		didSave = FALSE;
-	}
-
-	if (file != NULL && totalStateSize == fwrite(&state, 1, totalStateSize, file)) {
-		didSave = TRUE;
-	} else {
-		printf("Error: could not write %zu bytes to file %s\n", totalStateSize, filename);
-		didSave = FALSE;
-	}
-
-	if (file) {
-		fclose(file);
-		file = NULL;
-	}
-
-	return didSave;
+    state.eof.id = FOURCHAR('EOF\0');
+    state.eof.size = sizeof(IntellivisionState);
 }
 
-BOOL Intellivision::LoadState(const CHAR* filename)
+BOOL Intellivision::LoadState()
 {
-	BOOL didLoadState = FALSE;
-	IntellivisionState state = {9};
-	size_t totalStateSize = sizeof(IntellivisionState);
+    if (!isStateValid(&state)) {
+        return FALSE;
+    }
 
-	FILE* file = fopen(filename, "rb");
+    cpu.setState(state.cpuState);
+    stic.setState(state.sticState);
+    psg.setState(state.psgState);
+    RAM8bit.setState(state.RAM8bitState, state.RAM8bitImage);
+    RAM16bit.setState(state.RAM16bitState, state.RAM16bitImage);
+    gram.setState(state.GRAMState, state.GRAMImage);
+    intellivoice.setState(state.ivoiceState);
+    ecs.setState(state.ecsState);
 
-	if (file == NULL) {
-		printf("Error: Unable to open file %s\n", filename);
-		return FALSE;
-	}
+    return TRUE;
+}
+
+BOOL Intellivision::isStateValid(const IntellivisionState* state)
+{
+    if (state->header.emu != FOURCHAR('EMUS') || state->header.state != FOURCHAR('TATE')) {
+        return FALSE;
+    }
+
+    if (state->header.emuID != ID_EMULATOR_BLISS) {
+        return FALSE;
+    }
+
+    if (FOURCHAR(EMU_STATE_VERSION) != FOURCHAR('dev\0') && state->header.version != FOURCHAR('dev\0') && state->header.version != FOURCHAR(EMU_STATE_VERSION)) {
+        return FALSE;
+    }
+
+    if (state->header.sys != FOURCHAR('SYS\0')) {
+        return FALSE;
+    }
+
+    if (state->header.sysID != ID_SYSTEM_INTELLIVISION) {
+        return FALSE;
+    }
+
+    if (state->header.cart != FOURCHAR('CART')) {
+        return FALSE;
+    }
+
+    if (state->header.cartID != 0x00000000 && state->header.cartID != currentRip->GetCRC()) {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+BOOL Intellivision::SaveState(IntellivisionState* outState)
+{
+    SaveState();
+
+    memcpy(outState, &state, sizeof(IntellivisionState));
+
+    return TRUE;
+}
+
+BOOL Intellivision::LoadState(const IntellivisionState* inState)
+{
+    if (!isStateValid(inState)) {
+        return FALSE;
+    }
+
+    memcpy(&state, inState, sizeof(IntellivisionState));
+
+    return LoadState();
+}
+
+BOOL Intellivision::SaveStateBuffer(void* outBuffer, size_t bufferSize)
+{
+    IntellivisionState *bufferState = (IntellivisionState*)outBuffer;
+
+    if(!outBuffer || bufferSize < sizeof(IntellivisionState)) {
+        return FALSE;
+    }
+
+    return SaveState(bufferState);
+}
+
+BOOL Intellivision::LoadStateBuffer(const void* inBuffer, size_t bufferSize)
+{
+    IntellivisionState *bufferState = (IntellivisionState*)inBuffer;
+
+    if(!inBuffer || bufferSize < sizeof(IntellivisionState)) {
+        return FALSE;
+    }
+
+    return LoadState(bufferState);
+}
+
+BOOL Intellivision::SaveStateFile(const CHAR* filename)
+{
+    BOOL didSave = FALSE;
+    size_t totalStateSize = sizeof(IntellivisionState);
+
+    // save the current state internally
+    SaveState();
+
+    FILE* file = fopen(filename, "wb");
+
+    if (file == NULL) {
+        printf("Error: Unable to create file %s\n", filename);
+        didSave = FALSE;
+    }
+
+    if (file != NULL && totalStateSize == fwrite(&state, 1, totalStateSize, file)) {
+        didSave = TRUE;
+    } else {
+        printf("Error: could not write %zu bytes to file %s\n", totalStateSize, filename);
+        didSave = FALSE;
+    }
+
+    if (file) {
+        fclose(file);
+        file = NULL;
+    }
+
+    return didSave;
+}
+
+BOOL Intellivision::LoadStateFile(const CHAR* filename)
+{
+    BOOL didLoadState = FALSE;
+    IntellivisionState fileState = {0};
+    size_t totalStateSize = sizeof(IntellivisionState);
+
+    FILE* file = fopen(filename, "rb");
+
+    if (file == NULL) {
+        printf("Error: Unable to open file %s\n", filename);
+        return FALSE;
+    }
 #if 0
-	// read in the whole file
-	if (totalStateSize != fread(&state, 1, totalStateSize, file)) {
-		printf("Error: could not read state (%zu bytes) from file %s\n", totalStateSize, filename);
-		goto close;
-	}
+    // read in the whole file
+    if (totalStateSize != fread(&fileState, 1, totalStateSize, file)) {
+        printf("Error: could not read state (%zu bytes) from file %s\n", totalStateSize, filename);
+        goto close;
+    }
 #else
-	BOOL isParsing = FALSE;
-	StateChunk chunk = {0};
+    BOOL isParsing = FALSE;
+    StateChunk chunk = {0};
 
-	// read in the header
-	if (sizeof(StateHeader) != fread(&state, 1, sizeof(StateHeader), file)) {
-		printf("Error: could not read state header (%zu bytes) from file %s\n", totalStateSize, filename);
-		goto close;
-	}
+    // read in the header
+    if (sizeof(StateHeader) != fread(&fileState, 1, sizeof(StateHeader), file)) {
+        printf("Error: could not read state header (%zu bytes) from file %s\n", totalStateSize, filename);
+        goto close;
+    }
 
-	// validate file header
-	if (state.header.emu != FOURCHAR('EMUS') || state.header.state != FOURCHAR('TATE')) {
-		printf("Error: invalid header in file %s\n", filename);
-		goto close;
-	}
+    // validate file header
+    if (fileState.header.emu != FOURCHAR('EMUS') || fileState.header.state != FOURCHAR('TATE')) {
+        printf("Error: invalid header in file %s\n", filename);
+        goto close;
+    }
 
-	if (state.header.emuID != ID_EMULATOR_BLISS) {
-		printf("Error: invalid emulator ID %x in file %s\n", state.header.emuID, filename);
-		goto close;
-	}
+    if (fileState.header.emuID != ID_EMULATOR_BLISS) {
+        printf("Error: invalid emulator ID %x in file %s\n", fileState.header.emuID, filename);
+        goto close;
+    }
 
-	if (FOURCHAR(EMU_STATE_VERSION) != FOURCHAR('dev\0') && state.header.version != FOURCHAR('dev\0') && state.header.version != FOURCHAR(EMU_STATE_VERSION)) {
-		printf("Error: invalid emulator version 0x%08x (expected 0x%08x) in file %s\n", state.header.version, EMU_STATE_VERSION, filename);
-		goto close;
-	}
+    if (FOURCHAR(EMU_STATE_VERSION) != FOURCHAR('dev\0') && fileState.header.version != FOURCHAR('dev\0') && fileState.header.version != FOURCHAR(EMU_STATE_VERSION)) {
+        printf("Error: invalid emulator version 0x%08x (expected 0x%08x) in file %s\n", fileState.header.version, EMU_STATE_VERSION, filename);
+        goto close;
+    }
 
-	if (state.header.sys != FOURCHAR('SYS\0')) {
-		printf("Error: expected 'SYS ' chunk in file %s\n", filename);
-		goto close;
-	}
+    if (fileState.header.sys != FOURCHAR('SYS\0')) {
+        printf("Error: expected 'SYS ' chunk in file %s\n", filename);
+        goto close;
+    }
 
-	if (state.header.sysID != ID_SYSTEM_INTELLIVISION) {
-		printf("Error: invalid system ID %x in file %s\n", state.header.sysID, filename);
-		goto close;
-	}
+    if (fileState.header.sysID != ID_SYSTEM_INTELLIVISION) {
+        printf("Error: invalid system ID %x in file %s\n", fileState.header.sysID, filename);
+        goto close;
+    }
 
-	if (state.header.cart != FOURCHAR('CART')) {
-		printf("Error: expected 'CART' chunk in file %s\n", filename);
-		goto close;
-	}
+    if (fileState.header.cart != FOURCHAR('CART')) {
+        printf("Error: expected 'CART' chunk in file %s\n", filename);
+        goto close;
+    }
 
-	if (state.header.cartID != 0x00000000 && state.header.cartID != currentRip->GetCRC()) {
-		printf("Error: cartridge mismatch in file %s\n", filename);
-		goto close;
-	}
+    if (fileState.header.cartID != 0x00000000 && fileState.header.cartID != currentRip->GetCRC()) {
+        printf("Error: cartridge mismatch in file %s\n", filename);
+        goto close;
+    }
 
-	isParsing = TRUE;
-	while (isParsing) {
-		size_t fpos = ftell(file);
-		if (sizeof(StateChunk) != fread(&chunk, 1, sizeof(StateChunk), file)) {
-			isParsing = FALSE;
-			break;
-		}
+    isParsing = TRUE;
+    while (isParsing) {
+        size_t fpos = ftell(file);
+        if (sizeof(StateChunk) != fread(&chunk, 1, sizeof(StateChunk), file)) {
+            isParsing = FALSE;
+            break;
+        }
 
-		switch (chunk.id) {
-			default:
-				fpos = ftell(file);
-				break;
-			case FOURCHAR('CPU\0'):
-				if (chunk.size == sizeof(state.cpuState)) {
-					state.cpu = chunk;
-					fread(&state.cpuState, 1, state.cpu.size, file);
-				}
-				break;
-			case FOURCHAR('STIC'):
-				if (chunk.size == sizeof(state.sticState)) {
-					state.stic = chunk;
-					fread(&state.sticState, 1, state.stic.size, file);
-				}
-				break;
-			case FOURCHAR('PSG\0'):
-				if (chunk.size == sizeof(state.psgState)) {
-					state.psg = chunk;
-					fread(&state.psgState, 1, state.psg.size, file);
-				}
-				break;
-			case FOURCHAR('RAM0'):
-				if (chunk.size == sizeof(state.RAM8bitState) + sizeof(state.RAM8bitImage)) {
-					state.RAM8bit = chunk;
-					fread(&state.RAM8bitState, 1, state.RAM8bit.size, file);
-				}
-				break;
-			case FOURCHAR('RAM1'):
-				if (chunk.size == sizeof(state.RAM16bitState) + sizeof(state.RAM16bitImage)) {
-					state.RAM16bit = chunk;
-					fread(&state.RAM16bitState, 1, state.RAM16bit.size, file);
-				}
-				break;
-			case FOURCHAR('GRAM'):
-				if (chunk.size == sizeof(state.GRAMState) + sizeof(state.GRAMImage)) {
-					state.GRAM = chunk;
-					fread(&state.GRAMState, 1, state.GRAM.size, file);
-				}
-				break;
-			case FOURCHAR('VOIC'):
-				// TODO: only if ivoice/ecs is used for this cart?
-				if (chunk.size == sizeof(state.ivoiceState)) {
-					state.ivoice = chunk;
-					fread(&state.ivoiceState, 1, state.ivoice.size, file);
-				}
-				break;
-			case FOURCHAR('ECS\0'):
-				// TODO: only if ivoice/ecs is used for this cart?
-				if (chunk.size == sizeof(state.ecsState)) {
-					state.ecs = chunk;
-					fread(&state.ecsState, 1, state.ecs.size, file);
-				}
-				break;
-			case FOURCHAR('EOF\0'):
-				state.eof = chunk;
-				isParsing = FALSE;
-				break;
-		}
-	}
+        switch (chunk.id) {
+            default:
+                fpos = ftell(file);
+                break;
+            case FOURCHAR('CPU\0'):
+                if (chunk.size == sizeof(fileState.cpuState)) {
+                    fileState.cpu = chunk;
+                    fread(&fileState.cpuState, 1, fileState.cpu.size, file);
+                }
+                break;
+            case FOURCHAR('STIC'):
+                if (chunk.size == sizeof(fileState.sticState)) {
+                    fileState.stic = chunk;
+                    fread(&fileState.sticState, 1, fileState.stic.size, file);
+                }
+                break;
+            case FOURCHAR('PSG\0'):
+                if (chunk.size == sizeof(fileState.psgState)) {
+                    fileState.psg = chunk;
+                    fread(&fileState.psgState, 1, fileState.psg.size, file);
+                }
+                break;
+            case FOURCHAR('RAM0'):
+                if (chunk.size == sizeof(fileState.RAM8bitState) + sizeof(fileState.RAM8bitImage)) {
+                    fileState.RAM8bit = chunk;
+                    fread(&fileState.RAM8bitState, 1, fileState.RAM8bit.size, file);
+                }
+                break;
+            case FOURCHAR('RAM1'):
+                if (chunk.size == sizeof(fileState.RAM16bitState) + sizeof(fileState.RAM16bitImage)) {
+                    fileState.RAM16bit = chunk;
+                    fread(&fileState.RAM16bitState, 1, fileState.RAM16bit.size, file);
+                }
+                break;
+            case FOURCHAR('GRAM'):
+                if (chunk.size == sizeof(fileState.GRAMState) + sizeof(fileState.GRAMImage)) {
+                    fileState.GRAM = chunk;
+                    fread(&fileState.GRAMState, 1, fileState.GRAM.size, file);
+                }
+                break;
+            case FOURCHAR('VOIC'):
+                // TODO: only if ivoice/ecs is used for this cart?
+                if (chunk.size == sizeof(fileState.ivoiceState)) {
+                    fileState.ivoice = chunk;
+                    fread(&fileState.ivoiceState, 1, fileState.ivoice.size, file);
+                }
+                break;
+            case FOURCHAR('ECS\0'):
+                // TODO: only if ivoice/ecs is used for this cart?
+                if (chunk.size == sizeof(fileState.ecsState)) {
+                    fileState.ecs = chunk;
+                    fread(&fileState.ecsState, 1, fileState.ecs.size, file);
+                }
+                break;
+            case FOURCHAR('EOF\0'):
+                fileState.eof = chunk;
+                isParsing = FALSE;
+                break;
+        }
+    }
 #endif
-	didLoadState = TRUE;
-
-	cpu.setState(state.cpuState);
-	stic.setState(state.sticState);
-	psg.setState(state.psgState);
-	RAM8bit.setState(state.RAM8bitState, state.RAM8bitImage);
-	RAM16bit.setState(state.RAM16bitState, state.RAM16bitImage);
-	gram.setState(state.GRAMState, state.GRAMImage);
-	intellivoice.setState(state.ivoiceState);
-	ecs.setState(state.ecsState);
+    didLoadState = TRUE;
 
 close:
-	fclose(file);
-	file = NULL;
+    fclose(file);
+    file = NULL;
 end:
-	return didLoadState;
-}
-
-UINT32 Intellivision::StateSize()
-{
-    return sizeof(IntellivisionState);
-}
-
-BOOL Intellivision::SerializeState(void* buffer, UINT32 length)
-{
-    if(!buffer || length < sizeof(IntellivisionState))
-    {
-        return FALSE;
+    if (didLoadState) {
+        return LoadState(&fileState);
     }
-    
-    IntellivisionState* state = (IntellivisionState*)buffer;
-    
-    size_t hsize = sizeof(StateHeader);
-    size_t csize = sizeof(StateChunk);
-    size_t cpusize = sizeof(CP1610State);
-    size_t sticsize = sizeof(AY38900State);
-    size_t psgsize = sizeof(AY38914State);
-    size_t ivoicesize = sizeof(IntellivoiceState);
-    size_t ecssize = sizeof(ECSState);
-    size_t ramsize = sizeof(RAMState);
-    size_t ram8imgsize = sizeof(state->RAM8bitImage);
-    size_t ram16imgsize = sizeof(state->RAM16bitImage);
-    size_t gramimgsize = sizeof(state->GRAMImage);
-    
-    state->header.emu = FOURCHAR('EMUS');
-    state->header.state = FOURCHAR('TATE');
-    state->header.emuID = ID_EMULATOR_BLISS;
-    state->header.version = FOURCHAR(EMU_STATE_VERSION);
-    state->header.sys = FOURCHAR('SYS\0');
-    state->header.sysID = ID_SYSTEM_INTELLIVISION;
-    state->header.cart = FOURCHAR('CART');
-    state->header.cartID = currentRip->GetCRC();
-    
-    state->cpu.id = FOURCHAR('CPU\0');
-    state->cpu.size = sizeof(CP1610State);
-    state->cpuState = cpu.getState();
-    
-    state->stic.id = FOURCHAR('STIC');
-    state->stic.size = sizeof(AY38900State);
-    state->sticState = stic.getState();
-    
-    state->psg.id = FOURCHAR('PSG\0');
-    state->psg.size = sizeof(AY38914State);
-    state->psgState = psg.getState();
-    
-    state->RAM8bit.id = FOURCHAR('RAM0');
-    state->RAM8bit.size = sizeof(RAMState) + sizeof(state->RAM8bitImage);
-    state->RAM8bitState = RAM8bit.getState(state->RAM8bitImage);
-    
-    state->RAM16bit.id = FOURCHAR('RAM1');
-    state->RAM16bit.size = sizeof(RAMState) + sizeof(state->RAM16bitImage);
-    state->RAM16bitState = RAM16bit.getState(state->RAM16bitImage);
-    
-    state->GRAM.id = FOURCHAR('GRAM');
-    state->GRAM.size = sizeof(RAMState) + sizeof(state->GRAMImage);
-    state->GRAMState = gram.getState(state->GRAMImage);
-    
-    // TODO: only if ivoice is used for this cart?
-    state->ivoice.id = FOURCHAR('VOIC');
-    state->ivoice.size = sizeof(IntellivoiceState);
-    state->ivoiceState = intellivoice.getState();
-    
-    // TODO: only if ecs is used for this cart?
-    state->ecs.id = FOURCHAR('ECS\0');
-    state->ecs.size = sizeof(ECSState);
-    state->ecsState = ecs.getState();
-    
-    state->eof.id = FOURCHAR('EOF\0');
-    state->eof.size = sizeof(IntellivisionState);
-    
-    return TRUE;
-}
 
-BOOL Intellivision::DeserializeState(const void* buffer, UINT32 length)
-{
-    if(!buffer || length < sizeof(IntellivisionState))
-    {
-        return FALSE;
-    }
-    
-    IntellivisionState* state = (IntellivisionState*)buffer;
-    
-    cpu.setState(state->cpuState);
-    stic.setState(state->sticState);
-    psg.setState(state->psgState);
-    RAM8bit.setState(state->RAM8bitState, state->RAM8bitImage);
-    RAM16bit.setState(state->RAM16bitState, state->RAM16bitImage);
-    gram.setState(state->GRAMState, state->GRAMImage);
-    intellivoice.setState(state->ivoiceState);
-    ecs.setState(state->ecsState);
-    
-    return TRUE;
+    return didLoadState;
 }

@@ -56,33 +56,34 @@ class Emulator : public Peripheral
         UINT32 GetPeripheralCount();
         Peripheral* GetPeripheral(UINT32);
 
-		UINT32 GetVideoWidth();
-		UINT32 GetVideoHeight();
+        UINT32 GetVideoWidth();
+        UINT32 GetVideoHeight();
 
         void UsePeripheral(UINT32, BOOL);
 
         void SetRip(Rip* rip);
 
-		void InitVideo(VideoBus* video, UINT32 width, UINT32 height);
-		void ReleaseVideo();
-		void InitAudio(AudioMixer* audio, UINT32 sampleRate);
-		void ReleaseAudio();
+        void InitVideo(VideoBus* video, UINT32 width, UINT32 height);
+        void ReleaseVideo();
+        void InitAudio(AudioMixer* audio, UINT32 sampleRate);
+        void ReleaseAudio();
 
         void Reset();
         void Run();
         void FlushAudio();
-		void Render();
+        void Render();
 
-        virtual BOOL SaveState(const CHAR* filename) = 0;
-        virtual BOOL LoadState(const CHAR* filename) = 0;
+        virtual BOOL SaveStateBuffer(void* outBuffer, size_t bufferSize) = 0;
+        virtual BOOL LoadStateBuffer(const void* inBuffer, size_t bufferSize) = 0;
 
-        virtual UINT32 StateSize() = 0;
-        virtual BOOL SerializeState(void* buffer, UINT32 length) = 0;
-        virtual BOOL DeserializeState(const void* buffer, UINT32 length) = 0;
+        virtual BOOL SaveStateFile(const CHAR* filename) = 0;
+        virtual BOOL LoadStateFile(const CHAR* filename) = 0;
 
-		static UINT32 GetEmulatorCount();
+        virtual size_t StateSize() = 0;
+
+        static UINT32 GetEmulatorCount();
         static Emulator* GetEmulator(UINT32 i);
-		static Emulator* GetEmulatorByID(UINT32 targetSystemID);
+        static Emulator* GetEmulatorByID(UINT32 targetSystemID);
         
     protected:
         Emulator(const char* name);

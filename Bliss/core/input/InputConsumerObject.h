@@ -12,19 +12,21 @@ class InputConsumerObject
     friend class InputConsumer;
 
 public:
-	InputConsumerObject(INT32 id, const CHAR* name, GUID defaultDeviceGuid, INT32 defaultObjectID);
+    InputConsumerObject(INT32 id, const CHAR* name);
+    InputConsumerObject(INT32 id, const CHAR* name, INT32 defaultObjectID);
+    InputConsumerObject(INT32 id, const CHAR* name, GUID defaultDeviceGuid, INT32 defaultObjectID);
     virtual ~InputConsumerObject();
 
     INT32 getId() { return id; }
 
     const CHAR* getName() { return name; }
-	
+
     GUID getDefaultDeviceGuid() { return defaultDeviceGuid; }
-	
+
     INT32 getDefaultEnum() { return defaultObjectID; }
     
     INT32 getBindingCount() { return bindingCount; }
-	
+
     INT32 getSubBindingCount(INT32 i) { return subBindingCounts[i]; }
 
     InputProducer* getSubBindingProducer(INT32 i, INT32 j) { return producerBindings[i][j]; }
@@ -34,20 +36,19 @@ public:
     void addBinding(InputProducer** producer, INT32* objectid, INT32 count);
 
     void clearBindings();
-	
-	float getInputValue();
+
+    float getInputValue();
 
 private:
     INT32 id;
-  	const CHAR* name;
+    const CHAR* name;
     GUID defaultDeviceGuid;
     INT32  defaultObjectID;
-	
+
     InputProducer** producerBindings[MAX_BINDINGS];
     INT32*          objectIDBindings[MAX_BINDINGS];
     INT32           subBindingCounts[MAX_BINDINGS];
     INT32           bindingCount;
-	
 };
 
 #endif

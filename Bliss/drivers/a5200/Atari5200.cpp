@@ -11,8 +11,8 @@ Atari5200::Atari5200()
       cpu(&memoryBus),
       antic(&memoryBus, &gtia)
 {
-	videoWidth = 336;
-	videoHeight = 240;
+    videoWidth = 336;
+    videoHeight = 240;
 
     //make the connections between the antic and the cpu
     antic.connectPinOut(ANTIC_PIN_OUT_NMI, &cpu, _6502C_PIN_IN_NMI);
@@ -24,7 +24,7 @@ Atari5200::Atari5200()
     AddRAM(&ram);
 
     //add the BIOS ROM
-	AddROM(&biosROM);
+    AddROM(&biosROM);
     
     //add the main CPU
     AddProcessor(&cpu);
@@ -46,28 +46,26 @@ Atari5200::Atari5200()
     AddInputConsumer(&rightInput);
 }
 
-BOOL Atari5200::SaveState(const CHAR* filename)
+BOOL Atari5200::SaveStateBuffer(void* outBuffer, size_t bufferSize)
 {
-    printf("Atari5200::SaveState is not implemented\n");
+    printf("Atari5200::SaveStateBuffer is not implemented\n");
     return FALSE;
 }
 
-BOOL Atari5200::LoadState(const CHAR* filename)
+BOOL Atari5200::LoadStateBuffer(const void* inBuffer, size_t bufferSize)
 {
-    printf("Atari5200::LoadState is not implemented\n");
+    printf("Atari5200::LoadStateBuffer is not implemented\n");
     return FALSE;
 }
 
-UINT32 Atari5200::StateSize() {
-    return 0;
-}
-
-BOOL Atari5200::SerializeState(void* buffer, UINT32 length)
+BOOL Atari5200::SaveStateFile(const CHAR* filename)
 {
+    printf("Atari5200::SaveStateFile is not implemented\n");
     return FALSE;
 }
 
-BOOL Atari5200::DeserializeState(const void* buffer, UINT32 length)
+BOOL Atari5200::LoadStateFile(const CHAR* filename)
 {
+    printf("Atari5200::LoadStateFile is not implemented\n");
     return FALSE;
 }

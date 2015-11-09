@@ -6,6 +6,32 @@
 
 #include "InputConsumerObject.h"
 
+InputConsumerObject::InputConsumerObject(INT32 i, const CHAR* n)
+: id(i),
+  name(n),
+  bindingCount(0)
+{
+    bindingCount = 0;
+    defaultObjectID = 0;
+    memset(&defaultDeviceGuid, 0, sizeof(GUID));
+    memset(producerBindings, 0, sizeof(producerBindings));
+    memset(objectIDBindings, 0, sizeof(objectIDBindings));
+    memset(subBindingCounts, 0, sizeof(subBindingCounts));
+}
+
+InputConsumerObject::InputConsumerObject(INT32 i, const CHAR* n, INT32 doid)
+: id(i),
+  name(n),
+  defaultObjectID(doid),
+  bindingCount(0)
+{
+    bindingCount = 0;
+    memset(&defaultDeviceGuid, 0, sizeof(GUID));
+    memset(producerBindings, 0, sizeof(producerBindings));
+    memset(objectIDBindings, 0, sizeof(objectIDBindings));
+    memset(subBindingCounts, 0, sizeof(subBindingCounts));
+}
+
 InputConsumerObject::InputConsumerObject(INT32 i, const CHAR* n, GUID ddg, INT32 doid)
 : id(i),
   name(n),

@@ -1,6 +1,7 @@
 
 #include "HandController.h"
 #include "Intellivision.h"
+#include <math.h>
 
 // TODO: jeremiah sypult cross-platform
 // classic game controller support should be handled in the input implementation
@@ -53,30 +54,29 @@ HandController::HandController(INT32 id, const CHAR* n)
 : InputConsumer(id),
   name(n)
 {
-    int i = 0;
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Keypad 1", GUID_SysKeyboard, DIK_NUMPAD7);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Keypad 2", GUID_SysKeyboard, DIK_NUMPAD8);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Keypad 3", GUID_SysKeyboard, DIK_NUMPAD9);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Keypad 4", GUID_SysKeyboard, DIK_NUMPAD4);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Keypad 5", GUID_SysKeyboard, DIK_NUMPAD5);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Keypad 6", GUID_SysKeyboard, DIK_NUMPAD6);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Keypad 7", GUID_SysKeyboard, DIK_NUMPAD1);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Keypad 8", GUID_SysKeyboard, DIK_NUMPAD2);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Keypad 9", GUID_SysKeyboard, DIK_NUMPAD3);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Keypad CLEAR", GUID_SysKeyboard, DIK_NUMPADPERIOD);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Keypad 0", GUID_SysKeyboard, DIK_NUMPAD0);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Keypad ENTER", GUID_SysKeyboard, DIK_NUMPADENTER);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Top Action Buttons", GUID_SysKeyboard, DIK_SPACE);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Bottom Left Action Button", GUID_SysKeyboard, DIK_LCONTROL);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Bottom Right Action Button", GUID_SysKeyboard, DIK_RCONTROL);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Disc Pad Up", GUID_SysKeyboard, DIK_UP);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Disc Pad NorthEast", GUID_SysKeyboard, DIK_W);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Disc Pad Right", GUID_SysKeyboard, DIK_RIGHT);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Disc Pad SouthEast", GUID_SysKeyboard, DIK_S);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Disc Pad Down", GUID_SysKeyboard, DIK_DOWN);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Disc Pad SouthWest", GUID_SysKeyboard, DIK_A);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Disc Pad Left", GUID_SysKeyboard, DIK_LEFT);
-    inputConsumerObjects[i++] = new InputConsumerObject(i, "Disc Pad NorthWest", GUID_SysKeyboard, DIK_Q);
+    inputConsumerObjects[0] = new InputConsumerObject(0, "Keypad 1", CONTROLLER_KEYPAD_1);
+    inputConsumerObjects[1] = new InputConsumerObject(1, "Keypad 2", CONTROLLER_KEYPAD_2);
+    inputConsumerObjects[2] = new InputConsumerObject(2, "Keypad 3", CONTROLLER_KEYPAD_3);
+    inputConsumerObjects[3] = new InputConsumerObject(3, "Keypad 4", CONTROLLER_KEYPAD_4);
+    inputConsumerObjects[4] = new InputConsumerObject(4, "Keypad 5", CONTROLLER_KEYPAD_5);
+    inputConsumerObjects[5] = new InputConsumerObject(5, "Keypad 6", CONTROLLER_KEYPAD_6);
+    inputConsumerObjects[6] = new InputConsumerObject(6, "Keypad 7", CONTROLLER_KEYPAD_7);
+    inputConsumerObjects[7] = new InputConsumerObject(7, "Keypad 8", CONTROLLER_KEYPAD_8);
+    inputConsumerObjects[8] = new InputConsumerObject(8, "Keypad 9", CONTROLLER_KEYPAD_9);
+    inputConsumerObjects[9] = new InputConsumerObject(9, "Keypad CLEAR", CONTROLLER_KEYPAD_CLEAR);
+    inputConsumerObjects[10] = new InputConsumerObject(10, "Keypad 0", CONTROLLER_KEYPAD_0);
+    inputConsumerObjects[11] = new InputConsumerObject(11, "Keypad ENTER", CONTROLLER_KEYPAD_ENTER);
+    inputConsumerObjects[12] = new InputConsumerObject(12, "Top Action Buttons", CONTROLLER_ACTION_TOP);
+    inputConsumerObjects[13] = new InputConsumerObject(13, "Bottom Left Action Button", CONTROLLER_ACTION_BOTTOM_LEFT);
+    inputConsumerObjects[14] = new InputConsumerObject(14, "Bottom Right Action Button", CONTROLLER_ACTION_BOTTOM_RIGHT);
+    inputConsumerObjects[15] = new InputConsumerObject(15, "Disc Pad Up", CONTROLLER_DISC_UP);
+    inputConsumerObjects[16] = new InputConsumerObject(16, "Disc Pad Up-Right", CONTROLLER_DISC_UP_RIGHT);
+    inputConsumerObjects[17] = new InputConsumerObject(17, "Disc Pad Right", CONTROLLER_DISC_RIGHT);
+    inputConsumerObjects[18] = new InputConsumerObject(18, "Disc Pad Down-Right", CONTROLLER_DISC_DOWN_RIGHT);
+    inputConsumerObjects[19] = new InputConsumerObject(19, "Disc Pad Down", CONTROLLER_DISC_DOWN);
+    inputConsumerObjects[20] = new InputConsumerObject(20, "Disc Pad Down-Left", CONTROLLER_DISC_DOWN_LEFT);
+    inputConsumerObjects[21] = new InputConsumerObject(21, "Disc Pad Left", CONTROLLER_DISC_LEFT);
+    inputConsumerObjects[22] = new InputConsumerObject(22, "Disc Pad Up-Left", CONTROLLER_DISC_UP_LEFT);
 }
 
 HandController::~HandController()
@@ -97,7 +97,7 @@ InputConsumerObject* HandController::getInputConsumerObject(INT32 i)
 
 void HandController::evaluateInputs()
 {
-	static const float offset = (2.0f * PI)/16.0f;
+    static const float offset = (2.0f * PI)/16.0f;
 
     inputValue = 0;
 
@@ -122,12 +122,12 @@ void HandController::evaluateInputs()
         inputConsumerObjects[21]->getInputValue() -
         nwseVector + neswVector;
 
-	if (xPos != 0 || yPos != 0) {
-		float positionInRadians = (atan2f(-xPos, -yPos)+PI);
-		UINT16 directionIndex = (UINT16)((positionInRadians+(offset/2.0))/offset) & 0x0F;
-		UINT16 directionValue = DIRECTION_OUTPUT_VALUES[directionIndex];
-		inputValue |= directionValue;
-	}
+    if (xPos != 0 || yPos != 0) {
+        float positionInRadians = (atan2f(-xPos, -yPos)+PI);
+        UINT16 directionIndex = (UINT16)((positionInRadians+(offset/2.0))/offset) & 0x0F;
+        UINT16 directionValue = DIRECTION_OUTPUT_VALUES[directionIndex];
+        inputValue |= directionValue;
+    }
 
 #if defined( CLASSIC_GAME_CONTROLLER )
     if (usingCGC) {
@@ -156,11 +156,12 @@ void HandController::resetInputConsumer()
     inputValue = 0xFF;
 }
 
-void HandController::setOutputValue(UINT16)
-{}
+void HandController::setOutputValue(UINT16 value)
+{
+    inputValue = value;
+}
 
 UINT16 HandController::getInputValue()
 {
     return inputValue;
 }
-

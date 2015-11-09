@@ -17,17 +17,51 @@
 #define RAM8BIT_SIZE    0x00F0
 #define RAM16BIT_SIZE   0x0160
 
+TYPEDEF_STRUCT_PACK( _IntellivisionState
+{
+    StateHeader          header;
+    StateChunk           cpu;
+    CP1610State          cpuState;
+    StateChunk           stic;
+    AY38900State         sticState;
+    StateChunk           psg;
+    AY38914State         psgState;
+    StateChunk           RAM8bit;
+    RAMState             RAM8bitState;
+    UINT16               RAM8bitImage[RAM8BIT_SIZE];
+    StateChunk           RAM16bit;
+    RAMState             RAM16bitState;
+    UINT16               RAM16bitImage[RAM16BIT_SIZE];
+    StateChunk           GRAM;
+    RAMState             GRAMState;
+    UINT16               GRAMImage[GRAM_SIZE];
+    StateChunk           ivoice;
+    IntellivoiceState    ivoiceState;
+    StateChunk           ecs;
+    ECSState             ecsState;
+    StateChunk           eof;
+} IntellivisionState; )
+
 class Intellivision : public Emulator
 {
     public:
         Intellivision();
 
-        BOOL SaveState(const CHAR* filename);
-        BOOL LoadState(const CHAR* filename);
+        void SaveState();
+        BOOL LoadState();
 
-        UINT32 StateSize();
-        BOOL SerializeState(void* buffer, UINT32 length);
-        BOOL DeserializeState(const void* buffer, UINT32 length);
+        BOOL isStateValid(const IntellivisionState* state);
+
+        BOOL SaveState(IntellivisionState* outState);
+        BOOL LoadState(const IntellivisionState *inState);
+
+        BOOL SaveStateBuffer(void* outBuffer, size_t bufferSize);
+        BOOL LoadStateBuffer(const void* inBuffer, size_t bufferSize);
+
+        BOOL SaveStateFile(const CHAR* filename);
+        BOOL LoadStateFile(const CHAR* filename);
+
+        inline size_t StateSize() { return sizeof(IntellivisionState); }
 
     private:
         //core processors
@@ -51,6 +85,9 @@ class Intellivision : public Emulator
     
         //the Intellivoice peripheral
         Intellivoice      intellivoice;
+
+        //the stored state of the entire emulator
+        IntellivisionState state;
 };
 
 #endif

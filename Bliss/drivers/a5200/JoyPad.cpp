@@ -27,31 +27,30 @@ const UINT8 JoyPad::KBCODES[15] = {
 JoyPad::JoyPad(INT32 id, const CHAR* name)
 : InputConsumer(id)
 {
-	this->name = new CHAR[strlen(name)+1];
+    this->name = new CHAR[strlen(name)+1];
     strcpy(this->name, name);
 
-    INT32 i = 0;
-    inputObjects[0] = new InputConsumerObject(i++, "Start", GUID_SysKeyboard, DIK_RETURN);
-    inputObjects[1] = new InputConsumerObject(i++, "Pause", GUID_SysKeyboard, DIK_TAB);
-    inputObjects[2] = new InputConsumerObject(i++, "Reset", GUID_SysKeyboard, DIK_F2);
-    inputObjects[3] = new InputConsumerObject(i++, "Keypad 1", GUID_SysKeyboard, DIK_NUMPAD7);
-    inputObjects[4] = new InputConsumerObject(i++, "Keypad 2", GUID_SysKeyboard, DIK_NUMPAD8);
-    inputObjects[5] = new InputConsumerObject(i++, "Keypad 3", GUID_SysKeyboard, DIK_NUMPAD9);
-    inputObjects[6] = new InputConsumerObject(i++, "Keypad 4", GUID_SysKeyboard, DIK_NUMPAD4);
-    inputObjects[7] = new InputConsumerObject(i++, "Keypad 5", GUID_SysKeyboard, DIK_NUMPAD5);
-    inputObjects[8] = new InputConsumerObject(i++, "Keypad 6", GUID_SysKeyboard, DIK_NUMPAD6);
-    inputObjects[9] = new InputConsumerObject(i++, "Keypad 7", GUID_SysKeyboard, DIK_NUMPAD1);
-    inputObjects[10] = new InputConsumerObject(i++, "Keypad 8", GUID_SysKeyboard, DIK_NUMPAD2);
-    inputObjects[11] = new InputConsumerObject(i++, "Keypad 9", GUID_SysKeyboard, DIK_NUMPAD3);
-    inputObjects[12] = new InputConsumerObject(i++, "Keypad Star (*)", GUID_SysKeyboard, DIK_NUMPADPERIOD);
-    inputObjects[13] = new InputConsumerObject(i++, "Keypad 0", GUID_SysKeyboard, DIK_NUMPAD0);
-    inputObjects[14] = new InputConsumerObject(i++, "Keypad Pound (#)", GUID_SysKeyboard, DIK_NUMPADENTER);
-    inputObjects[15] = new InputConsumerObject(i++, "Top Action Buttons", GUID_SysKeyboard, DIK_LCONTROL);
-    inputObjects[16] = new InputConsumerObject(i++, "Bottom Action Buttons", GUID_SysKeyboard, DIK_LALT);
-    inputObjects[17] = new InputConsumerObject(i++, "JoyStick Up", GUID_SysKeyboard, DIK_UP);
-    inputObjects[18] = new InputConsumerObject(i++, "JoyStick Right", GUID_SysKeyboard, DIK_RIGHT);
-    inputObjects[19] = new InputConsumerObject(i++, "JoyStick Down", GUID_SysKeyboard, DIK_DOWN);
-    inputObjects[20] = new InputConsumerObject(i++, "JoyStick Left", GUID_SysKeyboard, DIK_LEFT);
+    inputObjects[0] = new InputConsumerObject(0, "Start", JOYPAD_START);
+    inputObjects[1] = new InputConsumerObject(1, "Pause", JOYPAD_PAUSE);
+    inputObjects[2] = new InputConsumerObject(2, "Reset", JOYPAD_RESET);
+    inputObjects[3] = new InputConsumerObject(3, "Keypad 1", JOYPAD_KEYPAD_1);
+    inputObjects[4] = new InputConsumerObject(4, "Keypad 2", JOYPAD_KEYPAD_2);
+    inputObjects[5] = new InputConsumerObject(5, "Keypad 3", JOYPAD_KEYPAD_3);
+    inputObjects[6] = new InputConsumerObject(6, "Keypad 4", JOYPAD_KEYPAD_4);
+    inputObjects[7] = new InputConsumerObject(7, "Keypad 5", JOYPAD_KEYPAD_5);
+    inputObjects[8] = new InputConsumerObject(8, "Keypad 6", JOYPAD_KEYPAD_6);
+    inputObjects[9] = new InputConsumerObject(9, "Keypad 7", JOYPAD_KEYPAD_7);
+    inputObjects[10] = new InputConsumerObject(10, "Keypad 8", JOYPAD_KEYPAD_8);
+    inputObjects[11] = new InputConsumerObject(11, "Keypad 9", JOYPAD_KEYPAD_9);
+    inputObjects[12] = new InputConsumerObject(12, "Keypad Star (*)", JOYPAD_KEYPAD_STAR);
+    inputObjects[13] = new InputConsumerObject(13, "Keypad 0", JOYPAD_KEYPAD_0);
+    inputObjects[14] = new InputConsumerObject(14, "Keypad Pound (#)", JOYPAD_KEYPAD_POUND);
+    inputObjects[15] = new InputConsumerObject(15, "Top Action Buttons", JOYPAD_ACTION_TOP);
+    inputObjects[16] = new InputConsumerObject(16, "Bottom Action Buttons", JOYPAD_ACTION_BOTTOM);
+    inputObjects[17] = new InputConsumerObject(17, "JoyStick Up", JOYPAD_STICK_UP);
+    inputObjects[18] = new InputConsumerObject(18, "JoyStick Right", JOYPAD_STICK_RIGHT);
+    inputObjects[19] = new InputConsumerObject(19, "JoyStick Down", JOYPAD_STICK_DOWN);
+    inputObjects[20] = new InputConsumerObject(20, "JoyStick Left", JOYPAD_STICK_LEFT);
 }
 
 JoyPad::~JoyPad()
@@ -76,19 +75,19 @@ void JoyPad::resetInputConsumer()
 
 void JoyPad::evaluateInputs()
 {
-	//scan the keypad
-	kbcode = 0;
-	for (int i = 0; i < 15; i++) {
-		if (inputObjects[i]->getInputValue() != 0.0f)
-		    kbcode |= KBCODES[i];
-	}
-	
-	//top fire buttons
+    //scan the keypad
+    kbcode = 0;
+    for (int i = 0; i < 15; i++) {
+        if (inputObjects[i]->getInputValue() != 0.0f)
+            kbcode |= KBCODES[i];
+    }
+
+    //top fire buttons
     /*
-	if (inputObjects[15]->getInputValue() != 0.0f)
-		kbcode |= 0x20;
+    if (inputObjects[15]->getInputValue() != 0.0f)
+        kbcode |= 0x20;
     */
-	
+
     //x direction
     potx = (UINT8)(114.0f - (inputObjects[20]->getInputValue() * 114.0f) + (inputObjects[18]->getInputValue() * 114.0f));
     //y direction

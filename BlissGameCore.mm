@@ -34,7 +34,9 @@
 #import "core/rip/Rip.h"
 #import "core/audio/AudioMixer.h"
 #import "core/video/VideoBus.h"
+#import "drivers/intv/Intellivision.h"
 #import "drivers/intv/HandController.h"
+#import "drivers/intv/ECSKeyboard.h"
 
 #define INTV_IMAGE_WIDTH	(160)
 #define INTV_IMAGE_HEIGHT	(192)
@@ -42,9 +44,11 @@
 #define KEYBOARD_OBJECT_COUNT 256
 #define AUDIO_SAMPLE_RATE 48000
 
-#define INTY_TEST(bits, flag) (bits &   flag)
-#define INTY_ON(bits, flag)   (bits |=  flag)
-#define INTY_OFF(bits, flag)  (bits &= ~flag)
+#define INTY_TO_BITMAP(bits)  (1ULL << (uint64_t)(bits))
+
+#define INTY_TEST(bits, flag) ((bits) &   (uint64_t)(flag))
+#define INTY_ON(bits, flag)   ((bits) |=  (uint64_t)(flag))
+#define INTY_OFF(bits, flag)  ((bits) &= ~(uint64_t)(flag))
 
 typedef struct
 {
@@ -65,7 +69,10 @@ public:
 
 	float getValue(INT32 enumeration);
 
-	BOOL isKeyboardDevice() { return FALSE; }
+	BOOL isKeyboardDevice() { return keyboardDevice; }
+	void setKeyboardDevice(BOOL isKeyboardDevice) {
+		keyboardDevice = isKeyboardDevice;
+	}
 
 	void setPlayer(CHAR playerIndex) {
 		player = playerIndex;
@@ -73,6 +80,7 @@ public:
 
 private:
 	CHAR player;
+	BOOL keyboardDevice;
 };
 
 class BlissAudioMixer : public AudioMixer
@@ -94,14 +102,16 @@ public:
 @interface BlissGameCore () <OEIntellivisionSystemResponderClient>
 {
 	NSLock			*_bufferLock;
-	OERingBuffer		*_audioBuffer;
+	OERingBuffer	*_audioBuffer;
 	unsigned char	*_videoBuffer;
 	BlissAudioMixer	*_audioMixer;
 	BlissVideoBus	*_videoBus;
 
-    NSString			*_ROMName;
-	Emulator			*currentEmu;
+    NSString		*_ROMName;
+	Emulator		*currentEmu;
 	Rip				*currentRip;
+
+	NSMutableData	*_stateData;
 }
 - (int)blissButtonForIntellivisionButton:(OEIntellivisionButton)button player:(NSUInteger)player;
 @end
@@ -111,6 +121,9 @@ public:
 // Global variables because the callbacks need to access them...
 static BlissGameCore *_currentCore;
 static BlissController _controller[2] = {0};
+static uint64_t _keyboard = 0;
+static uint8_t _keyboardDownCount = 0;
+static uint8_t _keyboardShiftCount = 0;
 
 #pragma mark - OpenEmu Core
 
@@ -129,6 +142,8 @@ static BlissController _controller[2] = {0};
 
 		_audioMixer = new BlissAudioMixer;
 		_videoBus = new BlissVideoBus;
+
+		_stateData = [NSMutableData dataWithLength:sizeof(IntellivisionState)];
     }
 
     return self;
@@ -166,27 +181,27 @@ static BlissController _controller[2] = {0};
 {
 	char cfgFilename[PATH_MAX] = {0};
 	NSString *cfgString = [[NSBundle bundleForClass:[self class]] pathForResource:@"knowncarts" ofType:@"cfg" inDirectory:@""];
-	strncpy( cfgFilename, cfgString.UTF8String, sizeof(cfgFilename) );
+	strncpy(cfgFilename, cfgString.UTF8String, sizeof(cfgFilename));
 
-	if (!cfgFilename || !cfgFilename[0])
+	if(!cfgFilename[0])
 		return FALSE;
 
-	if (strlen(filename) < 5)
+	if(strlen(filename) < 5)
 		return FALSE;
 
 	const CHAR* extStart = filename + strlen(filename) - 4;
-	if (strcmpi(extStart, ".intv") == 0 || strcmpi(extStart, ".int") == 0 || strcmpi(extStart, ".bin") == 0)
+	if(strcmpi(extStart, ".intv") == 0 || strcmpi(extStart, ".int") == 0 || strcmpi(extStart, ".bin") == 0)
 	{
 		//load the bin file as a Rip
 		currentRip = Rip::LoadBin(filename, cfgFilename);
-		if (currentRip == NULL)
+		if(currentRip == NULL)
 			return FALSE;
 	}
-	else if (strcmpi(extStart, ".a52") == 0)
+	else if(strcmpi(extStart, ".a52") == 0)
 	{
 		//load the bin file as a Rip
 		currentRip = Rip::LoadA52(filename);
-		if (currentRip == NULL)
+		if(currentRip == NULL)
 			return FALSE;
 
 		CHAR fileSubname[MAX_PATH];
@@ -194,11 +209,11 @@ static BlissController _controller[2] = {0};
 		strncpy(fileSubname, filenameStart, strlen(filenameStart)-4);
 		*(fileSubname+strlen(filenameStart)-4) = NULL;
 	}
-	else if (strcmpi(extStart, ".irom") == 0 || strcmpi(extStart, ".rom") == 0)
+	else if(strcmpi(extStart, ".irom") == 0 || strcmpi(extStart, ".rom") == 0)
 	{
 		//load the rom file as a Rip
 		currentRip = Rip::LoadRom(filename);
-		if (currentRip == NULL)
+		if(currentRip == NULL)
 			return FALSE;
 
 		CHAR fileSubname[MAX_PATH];
@@ -206,11 +221,11 @@ static BlissController _controller[2] = {0};
 		strncpy(fileSubname, filenameStart, strlen(filenameStart)-4);
 		*(fileSubname+strlen(filenameStart)-4) = NULL;
 	}
-	else if (strcmpi(extStart, ".zip") == 0)
+	else if(strcmpi(extStart, ".zip") == 0)
 	{
 		//load the zip file as a Rip
 		currentRip = Rip::LoadZip(filename, cfgFilename);
-		if (currentRip == NULL)
+		if(currentRip == NULL)
 			return FALSE;
 
 		CHAR fileSubname[MAX_PATH];
@@ -218,10 +233,11 @@ static BlissController _controller[2] = {0};
 		strncpy(fileSubname, filenameStart, strlen(filenameStart)-4);
 		*(fileSubname+strlen(filenameStart)-4) = NULL;
 	}
-	else {
+	else
+	{
 		//load the designated Rip
 		currentRip = Rip::LoadRip(filename);
-		if (currentRip == NULL)
+		if(currentRip == NULL)
 			return FALSE;
 	}
 
@@ -234,18 +250,23 @@ static BlissController _controller[2] = {0};
 	NSString *BIOSPath = nil;
 	UINT16 count = peripheral->GetROMCount();
 
-	for (UINT16 i = 0; i < count; i++) {
+	for(UINT16 i = 0; i < count; i++)
+	{
 		ROM* r = peripheral->GetROM(i);
-		if (r->isLoaded()) {
+		if(r->isLoaded())
+		{
 			didLoadROMs = YES;
 			continue;
 		}
 
 		BIOSPath = [[self biosDirectoryPath] stringByAppendingString:[NSString stringWithFormat:@"/%s", r->getDefaultFileName()]];
 
-		if ( r->load( [BIOSPath fileSystemRepresentation], r->getDefaultFileOffset() ) ) {
+		if(r->load([BIOSPath fileSystemRepresentation], r->getDefaultFileOffset()))
+		{
 			didLoadROMs = YES;
-		} else {
+		}
+		else
+		{
 			didLoadROMs = NO;
 			break;
 		}
@@ -258,16 +279,19 @@ static BlissController _controller[2] = {0};
 {
 	UINT16 count = periph->GetInputConsumerCount();
 
-	for (UINT16 i = 0; i < count; i++) {
+	for(UINT16 i = 0; i < count; i++)
+	{
 		InputConsumer* nextInputConsumer = periph->GetInputConsumer(i);
 
 		//iterate through each object on this consumer (buttons, keys, etc.)
 		int iccount = nextInputConsumer->getInputConsumerObjectCount();
 
-		for (int j = 0; j < iccount; j++) {
+		for(int j = 0; j < iccount; j++)
+		{
 			InputConsumerObject* nextObject = nextInputConsumer->getInputConsumerObject(j);
 
-			if (nextObject) {
+			if(nextObject)
+			{
 				nextObject->clearBindings();
 			}
 		}
@@ -276,13 +300,19 @@ static BlissController _controller[2] = {0};
 
 - (void)ReleaseEmulatorInputs
 {
-	if ( !currentEmu )
+	memset(_controller, 0, sizeof(_controller));
+	_keyboard = 0;
+	_keyboardDownCount = 0;
+	_keyboardShiftCount = 0;
+
+	if(!currentEmu)
 		return;
 
 	[self ReleasePeripheralInputs:currentEmu];
 	UINT32 count = currentEmu->GetPeripheralCount();
 
-	for (UINT32 i = 0; i < count; i++) {
+	for(UINT32 i = 0; i < count; i++)
+	{
 		[self ReleasePeripheralInputs:currentEmu->GetPeripheral(i)];
 	}
 }
@@ -293,21 +323,26 @@ static BlissController _controller[2] = {0};
 	//these consumers represent the emulated joysticks, keyboards, etc. that were
 	//originally used to provide input to the emulated system
 	UINT16 count = periph->GetInputConsumerCount();
-	for (UINT16 i = 0; i < count; i++) {
+	for(UINT16 i = 0; i < count; i++)
+	{
 		InputConsumer* nextInputConsumer = periph->GetInputConsumer(i);
+		BOOL isKeyboard = dynamic_cast<ECSKeyboard*>(nextInputConsumer) ? TRUE : FALSE;
 
 		//iterate through each object on this consumer (buttons, keys, etc.)
 		int iccount = nextInputConsumer->getInputConsumerObjectCount();
-		for (int j = 0; j < iccount; j++) {
+		for(int j = 0; j < iccount; j++)
+		{
 			InputConsumerObject* nextObject = nextInputConsumer->getInputConsumerObject(j);
 
-			if ( nextObject ) {
+			if(nextObject)
+			{
 				INT32 _objectids[1] = {nextObject->getDefaultEnum()};
 				INT32 *objectids = _objectids;
 				InputProducer** producerList = new InputProducer*[0];
 				BlissInputProducer *producer = new BlissInputProducer;
 
-				producer->setPlayer( i );
+				producer->setPlayer(i);
+				producer->setKeyboardDevice(isKeyboard);
 				producerList[0] = producer;
 				nextObject->addBinding(producerList, objectids, 1);
 				delete[] producerList;
@@ -324,7 +359,8 @@ static BlissController _controller[2] = {0};
 
 	UINT32 count = currentEmu->GetPeripheralCount();
 
-	for (UINT32 i = 0; i < count; i++) {
+	for(UINT32 i = 0; i < count; i++)
+	{
 		[self InitializePeripheralInputs:currentEmu->GetPeripheral(i)];
 	}
 }
@@ -337,7 +373,8 @@ static BlissController _controller[2] = {0};
 
 	[self stopEmulation];
 
-	if (![self LoadRip:[path UTF8String]]) {
+	if(![self LoadRip:[path UTF8String]])
+	{
 		return FALSE;
 	}
 
@@ -347,30 +384,36 @@ static BlissController _controller[2] = {0};
 	currentEmu = Emulator::GetEmulatorByID(currentRip->GetTargetSystemID());
 
 	// load emulator ROMs
-	if (![self loadROMForPeripheral:currentEmu]) {
+	if(![self loadROMForPeripheral:currentEmu])
+	{
 		return NO;
 	}
 
 	// load peripheral ROMs
 	INT32 count = currentEmu->GetPeripheralCount();
-	for (INT32 i = 0; i < count; i++) {
+	for(INT32 i = 0; i < count; i++)
+	{
 		Peripheral* p = currentEmu->GetPeripheral(i);
 		PeripheralCompatibility usage = currentRip->GetPeripheralUsage(p->GetShortName());
-		if (usage == PERIPH_INCOMPATIBLE || usage == PERIPH_COMPATIBLE) {
+		if(usage == PERIPH_INCOMPATIBLE || usage == PERIPH_COMPATIBLE)
+		{
 			currentEmu->UsePeripheral(i, FALSE);
 			continue;
 		}
 
 		BOOL loaded = [self loadROMForPeripheral:p];
-		if (loaded) {
+		if(loaded)
+		{
 			//peripheral loaded, might as well use it.
 			currentEmu->UsePeripheral(i, TRUE);
 		}
-		else if (usage == PERIPH_OPTIONAL) {
+		else if(usage == PERIPH_OPTIONAL)
+		{
 			//didn't load, but the peripheral is optional, so just skip it
 			currentEmu->UsePeripheral(i, FALSE);
 		}
-		else {
+		else
+		{
 			//usage == PERIPH_REQUIRED, but it didn't load
 			return NO;
 		}
@@ -398,14 +441,16 @@ static BlissController _controller[2] = {0};
 
 - (void)stopEmulation
 {
-	if (currentEmu) {
+	if(currentEmu)
+	{
 		currentEmu->SetRip(NULL);
 		currentEmu->ReleaseAudio();
 		currentEmu->ReleaseVideo();
 		currentEmu = NULL;
 	}
 
-	if (currentRip) {
+	if(currentRip)
+	{
 		delete currentRip;
 		currentRip = NULL;
 	}
@@ -477,21 +522,48 @@ static BlissController _controller[2] = {0};
 
 - (BOOL)saveStateToFileAtPath:(NSString *)fileName
 {
-	return currentEmu->SaveState( [fileName fileSystemRepresentation] );
+	BOOL didSaveStateFile = NO;
+
+	didSaveStateFile = currentEmu->SaveStateFile([fileName fileSystemRepresentation]);
+
+	return didSaveStateFile;
 }
 
 - (BOOL)loadStateFromFileAtPath:(NSString *)fileName
 {
-	return currentEmu->LoadState( [fileName fileSystemRepresentation] );
+	BOOL didLoadStateFile = NO;
+
+	// TODO: is this an emulator bug, a state bug, or a hardware necessity?
+	// determine if this intellivision cart requires the ECS peripheral.
+	// if it does, we need to 'warm up' the system with 5 frames before loading
+	// the state in to the emulator. (only immediately following a reset - why?)
+	if(currentRip->GetPeripheralUsage("ECS") == PERIPH_REQUIRED)
+	{
+		int warmUpECSFrameCount = 5;
+
+		while(warmUpECSFrameCount > 0)
+		{
+			currentEmu->Run();
+			warmUpECSFrameCount--;
+		}
+	}
+
+	didLoadStateFile = currentEmu->LoadStateFile([fileName fileSystemRepresentation]);
+
+	return didLoadStateFile;
 }
 
 - (NSData *)serializeStateWithError:(NSError **)outError
 {
-    NSUInteger length = currentEmu->StateSize();
-    void *data = malloc(length);
-    if(currentEmu->SerializeState(data, length))
+	void *stateBuffer = [_stateData mutableBytes];
+	NSUInteger stateLength = [_stateData length];
+	BOOL didSaveStateData = NO;
+
+	didSaveStateData = currentEmu->SaveStateBuffer(stateBuffer, stateLength);
+
+    if(didSaveStateData)
     {
-        return [NSData dataWithBytesNoCopy:data length:length];
+        return _stateData;
     }
     else
     {
@@ -511,7 +583,13 @@ static BlissController _controller[2] = {0};
 
 - (BOOL)deserializeState:(NSData *)state withError:(NSError **)outError
 {
-    if(currentEmu->DeserializeState([state bytes], [state length]))
+	const void *stateBuffer = [state bytes];
+	NSUInteger stateLength = [_stateData length];
+	BOOL didLoadStateData = NO;
+
+	didLoadStateData = currentEmu->LoadStateBuffer(stateBuffer, stateLength);
+
+    if(didLoadStateData)
     {
         return YES;
     }
@@ -543,11 +621,12 @@ void BlissAudioMixer::init(UINT32 sampleRate)
 	int sampleInterval = (sampleRate / [_currentCore frameInterval]);
 
 	// initialize the sampleBuffer
-	AudioMixer::init( sampleRate );
+	AudioMixer::init(sampleRate);
 
 	_currentCore->_audioBuffer = [_currentCore ringBufferAtIndex:0];
 
-	if ( _currentCore->_audioBuffer ) {
+	if(_currentCore->_audioBuffer)
+	{
 		[_currentCore->_audioBuffer setLength:(sizeof(INT16) * sampleInterval * 8)];
 	}
 }
@@ -574,7 +653,7 @@ void BlissAudioMixer::flushAudio()
 
 void BlissVideoBus::init(UINT32 width, UINT32 height)
 {
-	VideoBus::init( width, height );
+	VideoBus::init(width, height);
 
 	_currentCore->_videoBuffer = new unsigned char[256 * 256 * 4];
 }
@@ -592,28 +671,43 @@ void BlissVideoBus::render()
 	VideoBus::render();
 
 	[_currentCore->_bufferLock lock];
-	memcpy( _currentCore->_videoBuffer, this->pixelBuffer, this->pixelBufferSize );
+	memcpy(_currentCore->_videoBuffer, this->pixelBuffer, this->pixelBufferSize);
 	[_currentCore->_bufferLock unlock];
 }
 
 #pragma mark Bliss Input Producer
 
 BlissInputProducer::BlissInputProducer()
-: InputProducer(GUID_SysKeyboard)
+: InputProducer((GUID){0})
 {
 }
 
 float BlissInputProducer::getValue(INT32 enumeration)
 {
+	BOOL isKeyboardDevice = this->isKeyboardDevice();
 	char player = this->player;
 	float value = 0.0f;
 
-	if ( enumeration >= CONTROLLER_DISC_DOWN && enumeration <= CONTROLLER_DISC_UP_LEFT ) {
-		value = INTY_TEST( _controller[player].disc, enumeration ) == enumeration ? 1.0f : 0.0f;
-	} else if ( enumeration == CONTROLLER_ACTION_TOP || enumeration == CONTROLLER_ACTION_BOTTOM_LEFT || enumeration == CONTROLLER_ACTION_BOTTOM_RIGHT ) {
-		value = INTY_TEST( _controller[player].action, enumeration ) == enumeration ? 1.0f : 0.0f;
-	} else if ( enumeration >= CONTROLLER_KEYPAD_THREE && enumeration <= CONTROLLER_KEYPAD_CLEAR ) {
-		value = INTY_TEST( _controller[player].keypad, enumeration ) == enumeration ? 1.0f : 0.0f;
+	if(isKeyboardDevice)
+	{
+		uint64_t keyflag = INTY_TO_BITMAP(enumeration);
+
+		value = INTY_TEST(_keyboard, keyflag) == keyflag ? 1.0f : 0.0f;
+	}
+	else
+	{
+		if(enumeration >= CONTROLLER_DISC_DOWN && enumeration <= CONTROLLER_DISC_UP_LEFT)
+		{
+			value = INTY_TEST(_controller[player].disc, enumeration) == enumeration ? 1.0f : 0.0f;
+		}
+		else if(enumeration == CONTROLLER_ACTION_TOP || enumeration == CONTROLLER_ACTION_BOTTOM_LEFT || enumeration == CONTROLLER_ACTION_BOTTOM_RIGHT)
+		{
+			value = INTY_TEST(_controller[player].action, enumeration) == enumeration ? 1.0f : 0.0f;
+		}
+		else if(enumeration >= CONTROLLER_KEYPAD_THREE && enumeration <= CONTROLLER_KEYPAD_CLEAR)
+		{
+			value = INTY_TEST(_controller[player].keypad, enumeration) == enumeration ? 1.0f : 0.0f;
+		}
 	}
 
 	return value;
@@ -647,7 +741,7 @@ float BlissInputProducer::getValue(INT32 enumeration)
 		CONTROLLER_KEYPAD_ENTER
 	};
 
-	if (button < OEIntellivisionButtonCount && button >= OEIntellivisionButtonUp)
+	if(button < OEIntellivisionButtonCount && button >= OEIntellivisionButtonUp)
 	{
 		btn = OEBlissIntellivisionButton[button];
 	}
@@ -664,15 +758,18 @@ float BlissInputProducer::getValue(INT32 enumeration)
 		case CONTROLLER_DISC_UP:
 		case CONTROLLER_DISC_LEFT: {
 			_controller[player-1].disc = down ?
-				INTY_ON( _controller[player-1].disc, btn ) :
-				INTY_OFF( _controller[player-1].disc, btn );
+				INTY_ON(_controller[player-1].disc, btn) :
+				INTY_OFF(_controller[player-1].disc, btn);
 			// if both horizontal + vertical disc directions are active,
 			// turn on the wide bit flag for 45-degree angles
-			if ( (_controller[player-1].disc & (CONTROLLER_DISC_LEFT|CONTROLLER_DISC_RIGHT) ) &&
-				( _controller[player-1].disc & (CONTROLLER_DISC_UP|CONTROLLER_DISC_DOWN) ) ) {
-				INTY_ON( _controller[player-1].disc, CONTROLLER_DISC_WIDE );
-			} else {
-				INTY_OFF( _controller[player-1].disc, CONTROLLER_DISC_WIDE );
+			if((_controller[player-1].disc & (CONTROLLER_DISC_LEFT|CONTROLLER_DISC_RIGHT))
+			   && (_controller[player-1].disc & (CONTROLLER_DISC_UP|CONTROLLER_DISC_DOWN)))
+			{
+				INTY_ON(_controller[player-1].disc, CONTROLLER_DISC_WIDE);
+			}
+			else
+			{
+				INTY_OFF(_controller[player-1].disc, CONTROLLER_DISC_WIDE);
 			}
 			break;
 		}
@@ -707,7 +804,8 @@ float BlissInputProducer::getValue(INT32 enumeration)
 {
     int btn = [self blissButtonForIntellivisionButton:button player:player];
     
-	if(btn > -1) {
+	if(btn > -1)
+	{
 		[self setIntellivisionButton:btn isDown:YES forPlayer:player];
 	}
 }
@@ -716,8 +814,183 @@ float BlissInputProducer::getValue(INT32 enumeration)
 {
     int btn = [self blissButtonForIntellivisionButton:button player:player];
     
-	if(btn > -1) {
+	if(btn > -1)
+	{
 		[self setIntellivisionButton:btn isDown:NO forPlayer:player];
+	}
+}
+
+- (int)intellivisionKeyForKeyCode:(unsigned short)keyCode
+{
+	int btn = -1;
+
+	switch(keyCode)
+	{
+		default: break;
+		case kHIDUsage_KeyboardA: btn = ECS_KEYBOARD_A; break;
+		case kHIDUsage_KeyboardB: btn = ECS_KEYBOARD_B; break;
+		case kHIDUsage_KeyboardC: btn = ECS_KEYBOARD_C; break;
+		case kHIDUsage_KeyboardD: btn = ECS_KEYBOARD_D; break;
+		case kHIDUsage_KeyboardE: btn = ECS_KEYBOARD_E; break;
+		case kHIDUsage_KeyboardF: btn = ECS_KEYBOARD_F; break;
+		case kHIDUsage_KeyboardG: btn = ECS_KEYBOARD_G; break;
+		case kHIDUsage_KeyboardH: btn = ECS_KEYBOARD_H; break;
+		case kHIDUsage_KeyboardI: btn = ECS_KEYBOARD_I; break;
+		case kHIDUsage_KeyboardJ: btn = ECS_KEYBOARD_J; break;
+		case kHIDUsage_KeyboardK: btn = ECS_KEYBOARD_K; break;
+		case kHIDUsage_KeyboardL: btn = ECS_KEYBOARD_L; break;
+		case kHIDUsage_KeyboardM: btn = ECS_KEYBOARD_M; break;
+		case kHIDUsage_KeyboardN: btn = ECS_KEYBOARD_N; break;
+		case kHIDUsage_KeyboardO: btn = ECS_KEYBOARD_O; break;
+		case kHIDUsage_KeyboardP: btn = ECS_KEYBOARD_P; break;
+		case kHIDUsage_KeyboardQ: btn = ECS_KEYBOARD_Q; break;
+		case kHIDUsage_KeyboardR: btn = ECS_KEYBOARD_R; break;
+		case kHIDUsage_KeyboardS: btn = ECS_KEYBOARD_S; break;
+		case kHIDUsage_KeyboardT: btn = ECS_KEYBOARD_T; break;
+		case kHIDUsage_KeyboardU: btn = ECS_KEYBOARD_U; break;
+		case kHIDUsage_KeyboardV: btn = ECS_KEYBOARD_V; break;
+		case kHIDUsage_KeyboardW: btn = ECS_KEYBOARD_W; break;
+		case kHIDUsage_KeyboardX: btn = ECS_KEYBOARD_X; break;
+		case kHIDUsage_KeyboardY: btn = ECS_KEYBOARD_Y; break;
+		case kHIDUsage_KeyboardZ: btn = ECS_KEYBOARD_Z; break;
+
+		case kHIDUsage_Keyboard1: btn = ECS_KEYBOARD_1; break;
+		case kHIDUsage_Keyboard2: btn = ECS_KEYBOARD_2; break;
+		case kHIDUsage_Keyboard3: btn = ECS_KEYBOARD_3; break;
+		case kHIDUsage_Keyboard4: btn = ECS_KEYBOARD_4; break;
+		case kHIDUsage_Keyboard5: btn = ECS_KEYBOARD_5; break;
+		case kHIDUsage_Keyboard6: btn = ECS_KEYBOARD_6; break;
+		case kHIDUsage_Keyboard7: btn = ECS_KEYBOARD_7; break;
+		case kHIDUsage_Keyboard8: btn = ECS_KEYBOARD_8; break;
+		case kHIDUsage_Keyboard9: btn = ECS_KEYBOARD_9; break;
+		case kHIDUsage_Keyboard0: btn = ECS_KEYBOARD_0; break;
+
+		case kHIDUsage_KeyboardReturnOrEnter: btn = ECS_KEYBOARD_RETURN; break;
+		case kHIDUsage_KeyboardEscape: btn = ECS_KEYBOARD_ESCAPE; break;
+		case kHIDUsage_KeyboardDeleteOrBackspace: btn = ECS_KEYBOARD_LEFT; break;
+		case kHIDUsage_KeyboardSpacebar: btn = ECS_KEYBOARD_SPACE; break;
+
+		case kHIDUsage_KeyboardHyphen: btn = ECS_KEYBOARD_6; break; // shifted
+		case kHIDUsage_KeyboardEqualSign: btn = ECS_KEYBOARD_1; break; // shifted
+		case kHIDUsage_KeyboardSemicolon: btn = ECS_KEYBOARD_SEMICOLON; break;
+		case kHIDUsage_KeyboardQuote: btn = ECS_KEYBOARD_RIGHT; break; // shifted
+		case kHIDUsage_KeyboardComma: btn = ECS_KEYBOARD_COMMA; break;
+		case kHIDUsage_KeyboardPeriod: btn = ECS_KEYBOARD_PERIOD; break;
+		case kHIDUsage_KeyboardSlash: btn = ECS_KEYBOARD_7; break; // shifted
+
+		case kHIDUsage_KeyboardRightArrow: btn = ECS_KEYBOARD_RIGHT; break;
+		case kHIDUsage_KeyboardLeftArrow: btn = ECS_KEYBOARD_LEFT; break;
+		case kHIDUsage_KeyboardDownArrow: btn = ECS_KEYBOARD_DOWN; break;
+		case kHIDUsage_KeyboardUpArrow: btn = ECS_KEYBOARD_UP; break;
+
+		case kHIDUsage_KeyboardReturn: btn = ECS_KEYBOARD_RETURN; break;
+
+		case kHIDUsage_KeyboardLeftControl:
+		case kHIDUsage_KeyboardRightControl: btn = ECS_KEYBOARD_CONTROL; break;
+		case kHIDUsage_KeyboardLeftShift:
+		case kHIDUsage_KeyboardRightShift: btn = ECS_KEYBOARD_SHIFT; break;
+	}
+
+	return btn;
+}
+
+- (BOOL)isIntellivisionKeyShiftedForKeycode:(unsigned short)keyCode
+{
+	switch(keyCode)
+	{
+		default: break;
+		case kHIDUsage_KeyboardLeftShift:
+		case kHIDUsage_KeyboardRightShift: return YES; break;
+
+		case kHIDUsage_KeyboardHyphen: return YES; break;
+		case kHIDUsage_KeyboardEqualSign: return YES; break;
+		case kHIDUsage_KeyboardQuote: return YES; break;
+		case kHIDUsage_KeyboardSlash: return YES; break;
+	}
+	return NO;
+}
+
+- (void)setIntellivisionKey:(int)key isDown:(BOOL)down isShifted:(BOOL)shifted
+{
+	uint64_t shiftflag = INTY_TO_BITMAP(ECS_KEYBOARD_SHIFT);
+
+	// HACK: double re-map
+	if(_keyboardShiftCount > 0)
+	{
+		switch(key)
+		{
+			default: break;
+			case ECS_KEYBOARD_1: key = ECS_KEYBOARD_5; break;
+			case ECS_KEYBOARD_5: key = ECS_KEYBOARD_LEFT; break;
+			case ECS_KEYBOARD_6: key = ECS_KEYBOARD_UP; break;
+			case ECS_KEYBOARD_7: key = ECS_KEYBOARD_DOWN; break;
+			case ECS_KEYBOARD_RIGHT: key = ECS_KEYBOARD_2; break;
+		}
+	}
+
+	if(shifted)
+	{
+		if(down)
+		{
+			if(_keyboardShiftCount == 0)
+			{
+				INTY_ON(_keyboard, shiftflag);
+			}
+			_keyboardShiftCount++;
+		}
+		else
+		{
+			_keyboardShiftCount--;
+
+			if(_keyboardShiftCount == 0)
+			{
+				INTY_OFF(_keyboard, shiftflag);
+			}
+		}
+		//DLog(@"_keyboardShiftCount == %i", _keyboardShiftCount);
+	}
+
+	uint64_t keyflag = INTY_TO_BITMAP(key);
+
+	if(down)
+	{
+		INTY_ON(_keyboard, keyflag);
+		_keyboardDownCount++;
+	}
+	else
+	{
+		INTY_OFF(_keyboard, keyflag);
+		_keyboardDownCount--;
+
+		if(_keyboardDownCount == 0)
+		{
+			_keyboard = 0;
+		}
+	}
+	//DLog(@"_keyboardDownCount == %i", _keyboardDownCount);
+}
+
+- (void)keyDown:(unsigned short)keyCode
+{
+	int key = [self intellivisionKeyForKeyCode:keyCode];
+
+	if(key > -1)
+	{
+		BOOL shifted = [self isIntellivisionKeyShiftedForKeycode:keyCode];
+
+		[self setIntellivisionKey:key isDown:YES isShifted:shifted];
+	}
+}
+
+- (void)keyUp:(unsigned short)keyCode
+{
+	int key = [self intellivisionKeyForKeyCode:keyCode];
+
+	if(key > -1)
+	{
+		BOOL shifted = [self isIntellivisionKeyShiftedForKeycode:keyCode];
+
+		[self setIntellivisionKey:key isDown:NO isShifted:shifted];
 	}
 }
 
