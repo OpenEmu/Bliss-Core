@@ -520,16 +520,14 @@ static uint8_t _keyboardShiftCount = 0;
 	return 16;
 }
 
-- (BOOL)saveStateToFileAtPath:(NSString *)fileName
+- (void)saveStateToFileAtPath:(NSString *)fileName completionHandler:(void (^)(BOOL, NSError *))block
 {
 	BOOL didSaveStateFile = NO;
-
 	didSaveStateFile = currentEmu->SaveStateFile([fileName fileSystemRepresentation]);
-
-	return didSaveStateFile;
+    block(didSaveStateFile, nil);
 }
 
-- (BOOL)loadStateFromFileAtPath:(NSString *)fileName
+- (void)loadStateFromFileAtPath:(NSString *)fileName completionHandler:(void (^)(BOOL, NSError *))block
 {
 	BOOL didLoadStateFile = NO;
 
@@ -549,8 +547,7 @@ static uint8_t _keyboardShiftCount = 0;
 	}
 
 	didLoadStateFile = currentEmu->LoadStateFile([fileName fileSystemRepresentation]);
-
-	return didLoadStateFile;
+    block(didLoadStateFile, nil);
 }
 
 - (NSData *)serializeStateWithError:(NSError **)outError
@@ -562,23 +559,16 @@ static uint8_t _keyboardShiftCount = 0;
 	didSaveStateData = currentEmu->SaveStateBuffer(stateBuffer, stateLength);
 
     if(didSaveStateData)
-    {
         return _stateData;
+
+    if(outError) {
+        *outError = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreCouldNotSaveStateError userInfo:@{
+            NSLocalizedDescriptionKey : @"Save state data could not be written",
+            NSLocalizedRecoverySuggestionErrorKey : @"The emulator could not write the state data."
+        }];
     }
-    else
-    {
-        if(outError)
-        {
-            *outError = [NSError errorWithDomain:OEGameCoreErrorDomain
-                                            code:OEGameCoreCouldNotSaveStateError
-                                        userInfo:@{
-                                                   NSLocalizedDescriptionKey : @"Save state data could not be written",
-                                                   NSLocalizedRecoverySuggestionErrorKey : @"The emulator could not write the state data."
-                                                   }];
-        }
-        
-        return nil;
-    }
+
+    return nil;
 }
 
 - (BOOL)deserializeState:(NSData *)state withError:(NSError **)outError
@@ -590,21 +580,15 @@ static uint8_t _keyboardShiftCount = 0;
 	didLoadStateData = currentEmu->LoadStateBuffer(stateBuffer, stateLength);
 
     if(didLoadStateData)
-    {
         return YES;
+
+    if(outError) {
+        *outError = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreCouldNotLoadStateError userInfo:@{
+            NSLocalizedDescriptionKey : @"The save state data could not be read"
+        }];
     }
-    else
-    {
-        if(outError)
-        {
-            *outError = [NSError errorWithDomain:OEGameCoreErrorDomain
-                                            code:OEGameCoreCouldNotLoadStateError
-                                        userInfo:@{
-                                                   NSLocalizedDescriptionKey : @"The save state data could not be read"
-                                                   }];
-        }
-        return NO;
-    }
+
+    return NO;
 }
 
 
