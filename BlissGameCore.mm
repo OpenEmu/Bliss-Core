@@ -954,7 +954,7 @@ float BlissInputProducer::getValue(INT32 enumeration)
 	//DLog(@"_keyboardDownCount == %i", _keyboardDownCount);
 }
 
-- (void)keyDown:(unsigned short)keyCode
+- (oneway void)keyDown:(unsigned short)keyCode
 {
 	int key = [self intellivisionKeyForKeyCode:keyCode];
 
@@ -966,7 +966,7 @@ float BlissInputProducer::getValue(INT32 enumeration)
 	}
 }
 
-- (void)keyUp:(unsigned short)keyCode
+- (oneway void)keyUp:(unsigned short)keyCode
 {
 	int key = [self intellivisionKeyForKeyCode:keyCode];
 
