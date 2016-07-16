@@ -371,8 +371,6 @@ static uint8_t _keyboardShiftCount = 0;
 {
     _ROMName = [path copy];
 
-	[self stopEmulation];
-
 	if(![self LoadRip:[path UTF8String]])
 	{
 		return FALSE;
@@ -456,11 +454,6 @@ static uint8_t _keyboardShiftCount = 0;
 	}
 
     [super stopEmulation];
-}
-
-- (IBAction)pauseEmulation:(id)sender
-{
-	// is the lack of -executeFrame being called good enough?
 }
 
 - (OEIntSize)bufferSize
