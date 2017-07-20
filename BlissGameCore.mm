@@ -471,9 +471,14 @@ static uint8_t _keyboardShiftCount = 0;
     return OEIntSizeMake(INTV_IMAGE_WIDTH * (12.0/7.0), INTV_IMAGE_HEIGHT);
 }
 
-- (const void *)videoBuffer
+- (const void *)getVideoBufferWithHint:(void *)hint
 {
-    return _videoBuffer;
+    if (!hint) {
+        if (!_videoBuffer) _videoBuffer = new unsigned char[256 * 256 * 4];
+        hint = _videoBuffer;
+    }
+
+    return hint;
 }
 
 - (GLenum)pixelFormat
@@ -484,11 +489,6 @@ static uint8_t _keyboardShiftCount = 0;
 - (GLenum)pixelType
 {
     return GL_UNSIGNED_INT_8_8_8_8_REV;
-}
-
-- (GLenum)internalPixelFormat
-{
-    return GL_RGB8;
 }
 
 - (NSTimeInterval)frameInterval
@@ -631,14 +631,14 @@ void BlissAudioMixer::flushAudio()
 void BlissVideoBus::init(UINT32 width, UINT32 height)
 {
 	VideoBus::init(width, height);
-
-	_currentCore->_videoBuffer = new unsigned char[256 * 256 * 4];
 }
 
 void BlissVideoBus::release()
 {
-	delete[] _currentCore->_videoBuffer;
-	_currentCore->_videoBuffer = NULL;
+    if (_currentCore->_videoBuffer) {
+        delete[] _currentCore->_videoBuffer;
+        _currentCore->_videoBuffer = NULL;
+    }
 
 	VideoBus::release();
 }
