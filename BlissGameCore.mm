@@ -478,7 +478,7 @@ static uint8_t _keyboardShiftCount = 0;
         hint = _videoBuffer;
     }
 
-    return hint;
+    return _videoBuffer = (uint8_t*)hint;
 }
 
 - (GLenum)pixelFormat
