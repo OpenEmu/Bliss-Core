@@ -181,7 +181,7 @@ static uint8_t _keyboardShiftCount = 0;
 {
 	char cfgFilename[PATH_MAX] = {0};
 	NSString *cfgString = [[NSBundle bundleForClass:[self class]] pathForResource:@"knowncarts" ofType:@"cfg" inDirectory:@""];
-	strncpy(cfgFilename, cfgString.UTF8String, sizeof(cfgFilename));
+	strncpy(cfgFilename, cfgString.fileSystemRepresentation, sizeof(cfgFilename));
 
 	if(!cfgFilename[0])
 		return FALSE;
@@ -371,7 +371,7 @@ static uint8_t _keyboardShiftCount = 0;
 {
     _ROMName = [path copy];
 
-	if(![self LoadRip:[path UTF8String]])
+	if(![self LoadRip:path.fileSystemRepresentation])
 	{
 		return FALSE;
 	}
