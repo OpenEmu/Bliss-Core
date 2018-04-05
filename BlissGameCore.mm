@@ -205,7 +205,7 @@ static uint8_t _keyboardShiftCount = 0;
 			return FALSE;
 
 		CHAR fileSubname[MAX_PATH];
-		CHAR* filenameStart = strrchr(filename, '/')+1;
+		const CHAR* filenameStart = strrchr(filename, '/')+1;
 		strncpy(fileSubname, filenameStart, strlen(filenameStart)-4);
 		*(fileSubname+strlen(filenameStart)-4) = NULL;
 	}
@@ -217,7 +217,7 @@ static uint8_t _keyboardShiftCount = 0;
 			return FALSE;
 
 		CHAR fileSubname[MAX_PATH];
-		CHAR* filenameStart = strrchr(filename, '/')+1;
+		const CHAR* filenameStart = strrchr(filename, '/')+1;
 		strncpy(fileSubname, filenameStart, strlen(filenameStart)-4);
 		*(fileSubname+strlen(filenameStart)-4) = NULL;
 	}
@@ -229,7 +229,7 @@ static uint8_t _keyboardShiftCount = 0;
 			return FALSE;
 
 		CHAR fileSubname[MAX_PATH];
-		CHAR* filenameStart = strrchr(filename, '/')+1;
+		const CHAR* filenameStart = strrchr(filename, '/')+1;
 		strncpy(fileSubname, filenameStart, strlen(filenameStart)-4);
 		*(fileSubname+strlen(filenameStart)-4) = NULL;
 	}
