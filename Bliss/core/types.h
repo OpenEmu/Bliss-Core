@@ -27,7 +27,12 @@ typedef char					CHAR;
 
 #if !defined(BOOL)
 #if defined(__MACH__)
+#if defined(__arm64__)
+#include <stdbool.h>
+typedef _Bool                   BOOL;
+#else
 typedef signed char				BOOL;
+#endif
 #else
 typedef int						BOOL;
 #endif
